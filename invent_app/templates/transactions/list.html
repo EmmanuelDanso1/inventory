@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Transactions</h1>
+        <p style="color: #718096; margin-top: 5px;">Track all stock movements</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('transactions.stock_in') }}" class="btn btn-success">+ Stock In</a>
+        <a href="{{ url_for('transactions.stock_out') }}" class="btn btn-warning">- Stock Out</a>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="table-section">
+    <div class="table-header">
+        <h2>All Transactions ({{ transactions.total }})</h2>
+        <div class="search-box">
+            <form method="GET" action="{{ url_for('transactions.list') }}" style="display: flex; gap: 10px;">
+                <input type="text" name="search" value="{{ request.args.get('search', '') }}" 
+                       placeholder="Search..." class="form-control">
+                <input type="date" name="from_date" value="{{ request.args.get('from_date', '') }}" 
+                       class="form-control" style="width: 150px;">
+                <input type="date" name="to_date" value="{{ request.args.get('to_date', '') }}" 
+                       class="form-control" style="width: 150px;">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-type="all">All</button>
+        <button class="tab" data-type="STOCK_IN">Stock In</button>
+        <button class="tab" data-type="STOCK_OUT">Stock Out</button>
+        <button class="tab" data-type="ADJUSTMENT">Adjustments</button>
+    </div>
+
+    <table id="transactionsTable">
+        <thead>
+            <tr>
+                <th>Transaction ID</th>
+                <th>Date</th>
+                <th>Item</th>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total Value</th>
+                <th>Reference</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions.items %}
+            <tr data-type="{{ transaction.transaction_type.type_name }}">
+                <td><strong>#TRX-{{ '%04d'|format(transaction.transaction_id) }}</strong></td>
+                <td>{{ transaction.transaction_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ transaction.item.item_name }}</td>
+                <td>
+                    {% if transaction.transaction_type.type_name == 'STOCK_IN' %}
+                        <span class="badge badge-success">Stock In</span>
+                    {% elif transaction.transaction_type.type_name == 'STOCK_OUT' %}
+                        <span class="badge badge-warning">Stock Out</span>
+                    {% else %}
+                        <span class="badge badge-info">{{ transaction.transaction_type.type_name }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if transaction.transaction_type.type_name == 'STOCK_IN' %}
+                        <span style="color: #38a169;">+{{ transaction.quantity }}</span>
+                    {% else %}
+                        <span style="color: #dd6b20;">-{{ transaction.quantity }}</span>
+                    {% endif %}
+                </td>
+                <td>${{ '%.2f'|format(transaction.unit_price or 0) }}</td>
+                <td>${{ '%.2f'|format((transaction.unit_price or 0) * transaction.quantity) }}</td>
+                <td>{{ transaction.reference_number or 'N/A' }}</td>
+                <td>
+                    <a href="{{ url_for('transactions.detail', id=transaction.transaction_id) }}" 
+                       class="btn btn-primary btn-small">View</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" style="text-align: center; color: #718096; padding: 40px;">
+                    No transactions found.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {% if transactions.pages > 1 %}
+    <div class="pagination">
+        {% if transactions.has_prev %}
+            <a href="{{ url_for('transactions.list', page=transactions.prev_num) }}">← Previous</a>
+        {% endif %}
+        {% for page_num in transactions.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+                {% if page_num == transactions.page %}
+                    <span class="active">{{ page_num }}</span>
+                {% else %}
+                    <a href="{{ url_for('transactions.list', page=page_num) }}">{{ page_num }}</a>
+                {% endif %}
+            {% else %}
+                <span>...</span>
+            {% endif %}
+        {% endfor %}
+        {% if transactions.has_next %}
+            <a href="{{ url_for('transactions.list', page=transactions.next_num) }}">Next →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Tab filtering
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filterType = this.getAttribute('data-type');
+            const rows = document.querySelectorAll('#transactionsTable tbody tr');
+            
+            rows.forEach(row => {
+                if (filterType === 'all' || row.getAttribute('data-type') === filterType) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

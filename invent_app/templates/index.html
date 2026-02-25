@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Inventory Management{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+    <h1>Welcome to Inventory Management System</h1>
+    <p>A database performance testing and comparison project</p>
+    <div class="action-buttons">
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-large">
+            Go to Dashboard
+        </a>
+        <a href="{{ url_for('items.list') }}" class="btn btn-secondary btn-large">
+            View Items
+        </a>
+    </div>
+</div>
+
+<div class="features-grid">
+    <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Real-time Analytics</h3>
+        <p>Track inventory levels and movements in real-time</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Performance Testing</h3>
+        <p>Compare normalized vs denormalized database schemas</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <h3>Comprehensive Reports</h3>
+        <p>Generate detailed stock and transaction reports</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🔔</div>
+        <h3>Low Stock Alerts</h3>
+        <p>Automated notifications for items below reorder level</p>
+    </div>
+</div>
+{% endblock %}

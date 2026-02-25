@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Items List{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Items</h1>
+        <p style="color: #718096; margin-top: 5px;">Manage your inventory items</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('items.create') }}" class="btn btn-primary">+ Add New Item</a>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="table-section">
+    <div class="table-header">
+        <h2>All Items ({{ items.total }})</h2>
+        <div class="search-box">
+            <form method="GET" action="{{ url_for('items.list') }}" style="display: flex; gap: 10px;">
+                <input type="text" name="search" value="{{ request.args.get('search', '') }}" 
+                       placeholder="Search items..." class="form-control">
+                <select name="category" class="form-control" style="width: 150px;">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category.category_id }}" 
+                                {% if request.args.get('category') == category.category_id|string %}selected{% endif %}>
+                            {{ category.category_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th>Supplier</th>
+                <th>Unit Price</th>
+                <th>Current Stock</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items.items %}
+            <tr>
+                <td><strong>{{ item.item_code }}</strong></td>
+                <td>{{ item.item_name }}</td>
+                <td>{{ item.category.category_name }}</td>
+                <td>{{ item.supplier.supplier_name if item.supplier else 'N/A' }}</td>
+                <td>${{ '%.2f'|format(item.unit_price) }}</td>
+                <td>
+                    <strong style="font-size: 16px;">{{ item.current_stock }}</strong>
+                </td>
+                <td>
+                    {% if item.current_stock == 0 %}
+                        <span class="badge badge-danger">Out of Stock</span>
+                    {% elif item.current_stock <= item.reorder_level %}
+                        <span class="badge badge-warning">Low Stock</span>
+                    {% else %}
+                        <span class="badge badge-success">In Stock</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('items.detail', id=item.item_id) }}" 
+                       class="btn btn-primary btn-small">View</a>
+                    <a href="{{ url_for('items.edit', id=item.item_id) }}" 
+                       class="btn btn-secondary btn-small">Edit</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" style="text-align: center; color: #718096; padding: 40px;">
+                    No items found. <a href="{{ url_for('items.create') }}">Add your first item</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {% if items.pages > 1 %}
+    <div class="pagination">
+        {% if items.has_prev %}
+            <a href="{{ url_for('items.list', page=items.prev_num, search=request.args.get('search', ''), category=request.args.get('category', '')) }}">
+                ← Previous
+            </a>
+        {% endif %}
+
+        {% for page_num in items.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+                {% if page_num == items.page %}
+                    <span class="active">{{ page_num }}</span>
+                {% else %}
+                    <a href="{{ url_for('items.list', page=page_num, search=request.args.get('search', ''), category=request.args.get('category', '')) }}">
+                        {{ page_num }}
+                    </a>
+                {% endif %}
+            {% else %}
+                <span>...</span>
+            {% endif %}
+        {% endfor %}
+
+        {% if items.has_next %}
+            <a href="{{ url_for('items.list', page=items.next_num, search=request.args.get('search', ''), category=request.args.get('category', '')) }}">
+                Next →
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

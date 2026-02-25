@@ -1,0 +1,47 @@
+<div class="sidebar">
+    <div class="logo">📦 InventoryDB</div>
+    <ul class="nav-menu">
+        <li class="nav-item">
+            <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+                <span class="nav-icon">📊</span>
+                Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('items.list') }}" class="nav-link {% if request.endpoint.startswith('items') %}active{% endif %}">
+                <span class="nav-icon">📦</span>
+                Items
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('categories.list') }}" class="nav-link {% if request.endpoint.startswith('categories') %}active{% endif %}">
+                <span class="nav-icon">📁</span>
+                Categories
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('suppliers.list') }}" class="nav-link {% if request.endpoint.startswith('suppliers') %}active{% endif %}">
+                <span class="nav-icon">🏢</span>
+                Suppliers
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('transactions.list') }}" class="nav-link {% if request.endpoint.startswith('transactions') %}active{% endif %}">
+                <span class="nav-icon">🔄</span>
+                Transactions
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('reports.index') }}" class="nav-link {% if request.endpoint.startswith('reports') %}active{% endif %}">
+                <span class="nav-icon">📈</span>
+                Reports
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('reports.performance') }}" class="nav-link">
+                <span class="nav-icon">⚡</span>
+                Performance
+            </a>
+        </li>
+    </ul>
+</div>

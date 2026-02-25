@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Out{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Stock Out</h1>
+        <p style="color: #718096; margin-top: 5px;">Remove items from inventory</p>
+    </div>
+</div>
+
+<div class="table-section">
+    <form method="POST" action="{{ url_for('transactions.stock_out') }}">
+        {{ form.hidden_tag() }}
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Left Column -->
+            <div>
+                <div class="form-group">
+                    <label for="item_id">{{ form.item_id.label }} *</label>
+                    {{ form.item_id(class="form-control", id="item_select") }}
+                    {% if form.item_id.errors %}
+                        <div class="form-error">{{ form.item_id.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="quantity">{{ form.quantity.label }} *</label>
+                    {{ form.quantity(class="form-control", placeholder="0", id="quantity_input") }}
+                    <small style="color: #718096;">Available: <span id="available_stock">-</span></small>
+                    {% if form.quantity.errors %}
+                        <div class="form-error">{{ form.quantity.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="reference_number">{{ form.reference_number.label }}</label>
+                    {{ form.reference_number(class="form-control", placeholder="REQ-123, ORDER-456") }}
+                    {% if form.reference_number.errors %}
+                        <div class="form-error">{{ form.reference_number.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div>
+                <div class="form-group">
+                    <label for="transaction_date">{{ form.transaction_date.label }}</label>
+                    {{ form.transaction_date(class="form-control") }}
+                    {% if form.transaction_date.errors %}
+                        <div class="form-error">{{ form.transaction_date.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">{{ form.notes.label }}</label>
+                    {{ form.notes(class="form-control", rows="5", placeholder="Reason for stock out...") }}
+                    {% if form.notes.errors %}
+                        <div class="form-error">{{ form.notes.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; display: flex; gap: 10px;">
+            {{ form.submit(class="btn btn-warning btn-large") }}
+            <a href="{{ url_for('transactions.list') }}" class="btn btn-secondary btn-large">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Show item info and validate quantity
+    document.getElementById('item_select').addEventListener('change', function() {
+        const itemId = this.value;
+        if (itemId) {
+            fetch(`/api/items/${itemId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('available_stock').textContent = data.current_stock;
+                    document.getElementById('quantity_input').max = data.current_stock;
+                });
+        }
+    });
+
+    // Validate quantity doesn't exceed available stock
+    document.getElementById('quantity_input').addEventListener('input', function() {
+        const available = parseInt(document.getElementById('available_stock').textContent);
+        const quantity = parseInt(this.value);
+        
+        if (quantity > available) {
+            this.style.borderColor = '#e53e3e';
+            alert('Quantity cannot exceed available stock!');
+        } else {
+            this.style.borderColor = '#e2e8f0';
+        }
+    });
+</script>
+{% endblock %}

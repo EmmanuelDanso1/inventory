@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.item_name }}{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>{{ item.item_name }}</h1>
+        <p style="color: #718096; margin-top: 5px;">{{ item.item_code }}</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('transactions.stock_in', item_id=item.item_id) }}" class="btn btn-success">+ Stock In</a>
+        <a href="{{ url_for('transactions.stock_out', item_id=item.item_id) }}" class="btn btn-warning">- Stock Out</a>
+        <a href="{{ url_for('items.edit', id=item.item_id) }}" class="btn btn-primary">Edit Item</a>
+    </div>
+</div>
+
+<!-- Item Details Card -->
+<div class="table-section">
+    <h2 style="margin-bottom: 20px;">Item Details</h2>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+        <div>
+            <p><strong>Category:</strong> {{ item.category.category_name }}</p>
+            <p><strong>Supplier:</strong> {{ item.supplier.supplier_name if item.supplier else 'N/A' }}</p>
+            <p><strong>Location:</strong> 
+                {% if item.location %}
+                    Warehouse {{ item.location.warehouse }}, Aisle {{ item.location.aisle }}, Shelf {{ item.location.shelf }}
+                {% else %}
+                    Not assigned
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <p><strong>Unit Price:</strong> ${{ '%.2f'|format(item.unit_price) }}</p>
+            <p><strong>Current Stock:</strong> 
+                <span style="font-size: 18px; font-weight: bold;">{{ item.current_stock }}</span>
+                {% if item.current_stock <= item.reorder_level %}
+                    <span class="badge badge-warning">Low</span>
+                {% endif %}
+            </p>
+            <p><strong>Reorder Level:</strong> {{ item.reorder_level }}</p>
+        </div>
+    </div>
+
+    {% if item.description %}
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+        <strong>Description:</strong>
+        <p style="margin-top: 10px; color: #4a5568;">{{ item.description }}</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recent Transactions -->
+<div class="table-section">
+    <h2 style="margin-bottom: 20px;">Recent Transactions</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Reference</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in item.transactions[:10] %}
+            <tr>
+                <td>{{ transaction.transaction_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    {% if transaction.transaction_type.type_name == 'STOCK_IN' %}
+                        <span class="badge badge-success">Stock In</span>
+                    {% else %}
+                        <span class="badge badge-warning">Stock Out</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if transaction.transaction_type.type_name == 'STOCK_IN' %}
+                        +{{ transaction.quantity }}
+                    {% else %}
+                        -{{ transaction.quantity }}
+                    {% endif %}
+                </td>
+                <td>{{ transaction.reference_number or 'N/A' }}</td>
+                <td>
+                    <a href="{{ url_for('transactions.detail', id=transaction.transaction_id) }}" 
+                       class="btn btn-primary btn-small">View</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: #718096;">No transactions yet</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

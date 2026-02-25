@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="header">
+    <div>
+        <h1>Dashboard</h1>
+        <p style="color: #718096; margin-top: 5px;">Welcome back! Here's your inventory overview</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('transactions.stock_in') }}" class="btn btn-success">+ Stock In</a>
+        <a href="{{ url_for('items.create') }}" class="btn btn-primary">+ Add Item</a>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-info">
+            <h3>Total Items</h3>
+            <div class="stat-value">{{ total_items }}</div>
+        </div>
+        <div class="stat-icon blue">📦</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-info">
+            <h3>In Stock</h3>
+            <div class="stat-value">{{ in_stock_items }}</div>
+        </div>
+        <div class="stat-icon green">✓</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-info">
+            <h3>Low Stock</h3>
+            <div class="stat-value">{{ low_stock_items }}</div>
+        </div>
+        <div class="stat-icon orange">⚠️</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-info">
+            <h3>Out of Stock</h3>
+            <div class="stat-value">{{ out_of_stock_items }}</div>
+        </div>
+        <div class="stat-icon red">✕</div>
+    </div>
+</div>
+
+<!-- Low Stock Alert -->
+{% if low_stock_items > 0 %}
+<div class="alert alert-warning">
+    <strong>⚠️ Low Stock Alert:</strong> {{ low_stock_items }} item(s) are below reorder level.
+    <a href="{{ url_for('reports.low_stock') }}">View Details →</a>
+</div>
+{% endif %}
+
+<!-- Recent Transactions Table -->
+<div class="table-section">
+    <div class="table-header">
+        <h2>Recent Transactions</h2>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search transactions...">
+            <button class="btn btn-primary" onclick="searchTable()">Search</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-type="all">All</button>
+        <button class="tab" data-type="STOCK_IN">Stock In</button>
+        <button class="tab" data-type="STOCK_OUT">Stock Out</button>
+        <button class="tab" data-type="ADJUSTMENT">Adjustments</button>
+    </div>
+
+    <table id="transactionsTable">
+        <thead>
+            <tr>
+                <th>Transaction ID</th>
+                <th>Item</th>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in recent_transactions %}
+            <tr data-type="{{ transaction.transaction_type.type_name }}">
+                <td>#TRX-{{ '%04d'|format(transaction.transaction_id) }}</td>
+                <td>{{ transaction.item.item_name }}</td>
+                <td>
+                    {% if transaction.transaction_type.type_name == 'STOCK_IN' %}
+                        <span class="badge badge-success">Stock In</span>
+                    {% elif transaction.transaction_type.type_name == 'STOCK_OUT' %}
+                        <span class="badge badge-warning">Stock Out</span>
+                    {% else %}
+                        <span class="badge badge-info">{{ transaction.transaction_type.type_name }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if transaction.transaction_type.type_name == 'STOCK_IN' %}
+                        +{{ transaction.quantity }}
+                    {% else %}
+                        -{{ transaction.quantity }}
+                    {% endif %}
+                </td>
+                <td>{{ transaction.transaction_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    <a href="{{ url_for('transactions.detail', id=transaction.transaction_id) }}" 
+                       class="btn btn-primary btn-small">View</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="text-align: center; color: #718096;">No transactions found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Chart Section -->
+<div class="chart-section">
+    <h2 style="margin-bottom: 20px;">Stock Movement Trends (Last 30 Days)</h2>
+    <canvas id="stockChart"></canvas>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Tab filtering
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filterType = this.getAttribute('data-type');
+            const rows = document.querySelectorAll('#transactionsTable tbody tr');
+            
+            rows.forEach(row => {
+                if (filterType === 'all' || row.getAttribute('data-type') === filterType) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Search functionality
+    function searchTable() {
+        const input = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('#transactionsTable tbody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(input) ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}

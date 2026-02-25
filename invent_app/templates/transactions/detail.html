@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction Details{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Transaction Details</h1>
+        <p style="color: #718096; margin-top: 5px;">#TRX-{{ '%04d'|format(transaction.transaction_id) }}</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('transactions.list') }}" class="btn btn-secondary">Back to List</a>
+    </div>
+</div>
+
+<!-- Transaction Info -->
+<div class="table-section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Transaction Information</h2>
+        {% if transaction.transaction_type.type_name == 'STOCK_IN' %}
+            <span class="badge badge-success" style="font-size: 16px; padding: 8px 16px;">Stock In</span>
+        {% elif transaction.transaction_type.type_name == 'STOCK_OUT' %}
+            <span class="badge badge-warning" style="font-size: 16px; padding: 8px 16px;">Stock Out</span>
+        {% else %}
+            <span class="badge badge-info" style="font-size: 16px; padding: 8px 16px;">{{ transaction.transaction_type.type_name }}</span>
+        {% endif %}
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+        <div>
+            <h3 style="font-size: 14px; color: #718096; margin-bottom: 15px; text-transform: uppercase;">Item Details</h3>
+            <p><strong>Item Name:</strong> 
+                <a href="{{ url_for('items.detail', id=transaction.item.item_id) }}">{{ transaction.item.item_name }}</a>
+            </p>
+            <p><strong>Item Code:</strong> {{ transaction.item.item_code }}</p>
+            <p><strong>Category:</strong> {{ transaction.item.category.category_name }}</p>
+        </div>
+        
+        <div>
+            <h3 style="font-size: 14px; color: #718096; margin-bottom: 15px; text-transform: uppercase;">Transaction Details</h3>
+            <p><strong>Date:</strong> {{ transaction.transaction_date.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+            <p><strong>Quantity:</strong> 
+                {% if transaction.transaction_type.type_name == 'STOCK_IN' %}
+                    <span style="color: #38a169; font-size: 18px; font-weight: bold;">+{{ transaction.quantity }}</span>
+                {% else %}
+                    <span style="color: #dd6b20; font-size: 18px; font-weight: bold;">-{{ transaction.quantity }}</span>
+                {% endif %}
+            </p>
+            <p><strong>Unit Price:</strong> ${{ '%.2f'|format(transaction.unit_price or 0) }}</p>
+            <p><strong>Total Value:</strong> 
+                <span style="font-size: 18px; font-weight: bold;">
+                    ${{ '%.2f'|format((transaction.unit_price or 0) * transaction.quantity) }}
+                </span>
+            </p>
+        </div>
+    </div>
+
+    {% if transaction.supplier %}
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+        <h3 style="font-size: 14px; color: #718096; margin-bottom: 15px; text-transform: uppercase;">Supplier Information</h3>
+        <p><strong>Supplier:</strong> 
+            <a href="{{ url_for('suppliers.detail', id=transaction.supplier.supplier_id) }}">
+                {{ transaction.supplier.supplier_name }}
+            </a>
+        </p>
+        <p><strong>Contact:</strong> {{ transaction.supplier.contact_person or 'N/A' }}</p>
+        <p><strong>Phone:</strong> {{ transaction.supplier.phone or 'N/A' }}</p>
+    </div>
+    {% endif %}
+
+    {% if transaction.reference_number or transaction.notes %}
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+        {% if transaction.reference_number %}
+            <p><strong>Reference Number:</strong> {{ transaction.reference_number }}</p>
+        {% endif %}
+        
+        {% if transaction.notes %}
+            <div style="margin-top: 15px;">
+                <strong>Notes:</strong>
+                <p style="margin-top: 10px; padding: 15px; background: #f7fafc; border-radius: 6px; color: #4a5568;">
+                    {{ transaction.notes }}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+        <p style="color: #718096; font-size: 13px;">
+            <strong>Created by:</strong> {{ transaction.created_by or 'System' }}
+        </p>
+    </div>
+</div>
+{% endblock %}

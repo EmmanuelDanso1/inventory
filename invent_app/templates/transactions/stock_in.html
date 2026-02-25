@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Stock In{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Stock In</h1>
+        <p style="color: #718096; margin-top: 5px;">Add items to inventory</p>
+    </div>
+</div>
+
+<div class="table-section">
+    <form method="POST" action="{{ url_for('transactions.stock_in') }}">
+        {{ form.hidden_tag() }}
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Left Column -->
+            <div>
+                <div class="form-group">
+                    <label for="item_id">{{ form.item_id.label }} *</label>
+                    {{ form.item_id(class="form-control", id="item_select") }}
+                    {% if form.item_id.errors %}
+                        <div class="form-error">{{ form.item_id.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="quantity">{{ form.quantity.label }} *</label>
+                    {{ form.quantity(class="form-control", placeholder="0", id="quantity_input") }}
+                    {% if form.quantity.errors %}
+                        <div class="form-error">{{ form.quantity.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="unit_price">{{ form.unit_price.label }} *</label>
+                    {{ form.unit_price(class="form-control", placeholder="0.00", step="0.01", id="price_input") }}
+                    {% if form.unit_price.errors %}
+                        <div class="form-error">{{ form.unit_price.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label>Total Value</label>
+                    <input type="text" class="form-control" id="total_value" readonly 
+                           style="background: #f7fafc; font-weight: bold; font-size: 18px;">
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div>
+                <div class="form-group">
+                    <label for="supplier_id">{{ form.supplier_id.label }}</label>
+                    {{ form.supplier_id(class="form-control") }}
+                    {% if form.supplier_id.errors %}
+                        <div class="form-error">{{ form.supplier_id.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="reference_number">{{ form.reference_number.label }}</label>
+                    {{ form.reference_number(class="form-control", placeholder="PO-123, INV-456") }}
+                    {% if form.reference_number.errors %}
+                        <div class="form-error">{{ form.reference_number.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="transaction_date">{{ form.transaction_date.label }}</label>
+                    {{ form.transaction_date(class="form-control") }}
+                    {% if form.transaction_date.errors %}
+                        <div class="form-error">{{ form.transaction_date.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">{{ form.notes.label }}</label>
+                    {{ form.notes(class="form-control", rows="3", placeholder="Additional notes...") }}
+                    {% if form.notes.errors %}
+                        <div class="form-error">{{ form.notes.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; display: flex; gap: 10px;">
+            {{ form.submit(class="btn btn-success btn-large") }}
+            <a href="{{ url_for('transactions.list') }}" class="btn btn-secondary btn-large">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<!-- Current Stock Info -->
+<div class="table-section">
+    <h2 style="margin-bottom: 20px;">Selected Item Information</h2>
+    <div id="item_info" style="color: #718096;">
+        Select an item to view current stock information
+    </div>
+</div>
+
+<script>
+    // Calculate total value
+    function calculateTotal() {
+        const quantity = parseFloat(document.getElementById('quantity_input').value) || 0;
+        const price = parseFloat(document.getElementById('price_input').value) || 0;
+        const total = quantity * price;
+        document.getElementById('total_value').value = '$' + total.toFixed(2);
+    }
+
+    document.getElementById('quantity_input').addEventListener('input', calculateTotal);
+    document.getElementById('price_input').addEventListener('input', calculateTotal);
+
+    // Show item info when selected
+    document.getElementById('item_select').addEventListener('change', function() {
+        const itemId = this.value;
+        if (itemId) {
+            fetch(`/api/items/${itemId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('item_info').innerHTML = `
+                        <p><strong>Item:</strong> ${data.item_name} (${data.item_code})</p>
+                        <p><strong>Current Stock:</strong> ${data.current_stock}</p>
+                        <p><strong>Category:</strong> ${data.category_name}</p>
+                        <p><strong>Unit Price:</strong> $${data.unit_price}</p>
+                    `;
+                    document.getElementById('price_input').value = data.unit_price;
+                    calculateTotal();
+                });
+        }
+    });
+</script>
+{% endblock %}
