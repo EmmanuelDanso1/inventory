@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}500 - Internal Server Error{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 100px 20px;">
+    <h1 style="font-size: 120px; margin: 0; color: #e53e3e;">500</h1>
+    <h2 style="font-size: 32px; margin: 20px 0; color: #2d3748;">Internal Server Error</h2>
+    <p style="font-size: 18px; color: #718096; margin-bottom: 30px;">
+        Something went wrong on our end. We're working to fix it.
+    </p>
+    <div style="display: flex; gap: 15px; justify-content: center;">
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
+            Go to Dashboard
+        </a>
+        <a href="javascript:history.back()" class="btn btn-secondary">
+            Go Back
+        </a>
+    </div>
+</div>
+{% endblock %}
