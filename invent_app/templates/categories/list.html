@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Categories{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Categories</h1>
+        <p style="color: #718096; margin-top: 5px;">Manage inventory categories</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('categories.create') }}" class="btn btn-primary">+ Add Category</a>
+    </div>
+</div>
+
+<div class="table-section">
+    <div class="table-header">
+        <h2>All Categories ({{ categories|length }})</h2>
+        <input type="text" id="searchInput" placeholder="Search categories..." class="form-control" style="width: 250px;"
+               oninput="searchTable('searchInput', 'categoriesTable')">
+    </div>
+
+    <table id="categoriesTable">
+        <thead>
+            <tr>
+                <th>Category Name</th>
+                <th>Description</th>
+                <th>Items Count</th>
+                <th>Created Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for category in categories %}
+            <tr>
+                <td><strong>{{ category.category_name }}</strong></td>
+                <td>{{ category.description or '-' }}</td>
+                <td style="text-align: center;">
+                    <span class="badge badge-info">{{ category.items|length }}</span>
+                </td>
+                <td>{{ category.created_at.strftime('%Y-%m-%d') }}</td>
+                <td>
+                    <a href="{{ url_for('categories.edit', id=category.category_id) }}" 
+                       class="btn btn-secondary btn-small">Edit</a>
+                    <form method="POST" action="{{ url_for('categories.delete', id=category.category_id) }}" 
+                          style="display: inline;">
+                        <button type="submit" class="btn btn-danger btn-small"
+                                onclick="return confirmDelete('{{ category.category_name }}')">
+                            Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: #718096; padding: 40px;">
+                    No categories found. <a href="{{ url_for('categories.create') }}">Add your first category</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

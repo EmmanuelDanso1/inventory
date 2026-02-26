@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Category{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>{{ action }} Category</h1>
+        <p style="color: #718096; margin-top: 5px;">
+            {% if action == 'Create' %}Add a new category{% else %}Update category details{% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="table-section">
+    <form method="POST" action="{{ request.url }}">
+        {{ form.hidden_tag() }}
+        
+        <div class="form-group">
+            <label for="category_name">{{ form.category_name.label }}</label>
+            {{ form.category_name(class="form-control") }}
+            {% if form.category_name.errors %}
+                <div class="form-error">{{ form.category_name.errors[0] }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="description">{{ form.description.label }}</label>
+            {{ form.description(class="form-control", rows="4") }}
+            {% if form.description.errors %}
+                <div class="form-error">{{ form.description.errors[0] }}</div>
+            {% endif %}
+        </div>
+
+        <div style="margin-top: 30px; display: flex; gap: 10px;">
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('categories.list') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

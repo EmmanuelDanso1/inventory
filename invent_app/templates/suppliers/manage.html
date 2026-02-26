@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Supplier{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>{{ action }} Supplier</h1>
+        <p style="color: #718096; margin-top: 5px;">
+            {% if action == 'Create' %}Add a new supplier{% else %}Update supplier details{% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="table-section">
+    <form method="POST" action="{{ request.url }}">
+        {{ form.hidden_tag() }}
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Left Column -->
+            <div>
+                <div class="form-group">
+                    <label for="supplier_name">{{ form.supplier_name.label }}</label>
+                    {{ form.supplier_name(class="form-control") }}
+                    {% if form.supplier_name.errors %}
+                        <div class="form-error">{{ form.supplier_name.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="contact_person">{{ form.contact_person.label }}</label>
+                    {{ form.contact_person(class="form-control") }}
+                    {% if form.contact_person.errors %}
+                        <div class="form-error">{{ form.contact_person.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="email">{{ form.email.label }}</label>
+                    {{ form.email(class="form-control", type="email") }}
+                    {% if form.email.errors %}
+                        <div class="form-error">{{ form.email.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div>
+                <div class="form-group">
+                    <label for="phone">{{ form.phone.label }}</label>
+                    {{ form.phone(class="form-control") }}
+                    {% if form.phone.errors %}
+                        <div class="form-error">{{ form.phone.errors[0] }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="address">{{ form.address.label }}</label>
+                    {{ form.address(class="form-control", rows="4") }}
+                    {% if form.address.errors %}
+                        <div class="form-error">{{ form.address.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; display: flex; gap: 10px;">
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('suppliers.list') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

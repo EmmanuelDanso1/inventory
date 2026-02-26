@@ -25,5 +25,11 @@
     <!-- JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block extra_js %}{% endblock %}
+    
+    <!-- Load Chart.js from CDN first -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Then load your custom charts.js helper functions -->
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 </body>
 </html>

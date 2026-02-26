@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Movement History{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Stock Movement History</h1>
+        <p style="color: #718096; margin-top: 5px;">Complete transaction history</p>
+    </div>
+    <div class="header-actions">
+        <button onclick="exportTableToCSV('movementTable', 'movement_history.csv')" class="btn btn-success">
+            Export CSV
+        </button>
+        <button onclick="printPage()" class="btn btn-secondary">Print</button>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="table-section" style="margin-bottom: 20px;">
+    <form method="GET" action="{{ url_for('reports.movement_history') }}" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="date" name="start_date" class="form-control" style="width: 180px;" 
+               value="{{ request.args.get('start_date', '') }}" placeholder="Start Date">
+        <input type="date" name="end_date" class="form-control" style="width: 180px;"
+               value="{{ request.args.get('end_date', '') }}" placeholder="End Date">
+        <select name="type" class="form-control" style="width: 150px;">
+            <option value="">All Types</option>
+            <option value="STOCK_IN" {% if request.args.get('type') == 'STOCK_IN' %}selected{% endif %}>Stock In</option>
+            <option value="STOCK_OUT" {% if request.args.get('type') == 'STOCK_OUT' %}selected{% endif %}>Stock Out</option>
+            <option value="ADJUSTMENT" {% if request.args.get('type') == 'ADJUSTMENT' %}selected{% endif %}>Adjustment</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="{{ url_for('reports.movement_history') }}" class="btn btn-secondary">Clear</a>
+    </form>
+</div>
+
+<div class="table-section">
+    <div class="table-header">
+        <h2>Transactions ({{ transactions.total }})</h2>
+        <input type="text" id="searchInput" placeholder="Search..." class="form-control" style="width: 250px;"
+               oninput="searchTable('searchInput', 'movementTable')">
+    </div>
+
+    <table id="movementTable">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Transaction ID</th>
+                <th>Item</th>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total Value</th>
+                <th>Supplier</th>
+                <th>Reference</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions.items %}
+            <tr>
+                <td>{{ transaction.transaction_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>#TRX-{{ '%04d'|format(transaction.transaction_id) }}</td>
+                <td>{{ transaction.item.item_name }}</td>
+                <td>
+                    {% if transaction.transaction_type.type_name == 'STOCK_IN' %}
+                        <span class="badge badge-success">Stock In</span>
+                    {% elif transaction.transaction_type.type_name == 'STOCK_OUT' %}
+                        <span class="badge badge-warning">Stock Out</span>
+                    {% else %}
+                        <span class="badge badge-info">{{ transaction.transaction_type.type_name }}</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% if transaction.transaction_type.type_name == 'STOCK_IN' %}
+                        <span style="color: #48bb78;">+{{ transaction.quantity }}</span>
+                    {% else %}
+                        <span style="color: #ed8936;">-{{ transaction.quantity }}</span>
+                    {% endif %}
+                </td>
+                <td>${{ '%.2f'|format(transaction.unit_price) if transaction.unit_price else 'N/A' }}</td>
+                <td>
+                    {% if transaction.unit_price %}
+                        ${{ '%.2f'|format(transaction.quantity * transaction.unit_price) }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>{{ transaction.supplier.supplier_name if transaction.supplier else 'N/A' }}</td>
+                <td>{{ transaction.reference_number or '-' }}</td>
+                <td>
+                    <a href="{{ url_for('transactions.detail', id=transaction.transaction_id) }}" 
+                       class="btn btn-primary btn-small">View</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="10" style="text-align: center; color: #718096; padding: 40px;">
+                    No transactions found
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {% if transactions.pages > 1 %}
+    <div class="pagination">
+        {% if transactions.has_prev %}
+            <a href="{{ url_for('reports.movement_history', page=transactions.prev_num) }}">← Previous</a>
+        {% endif %}
+
+        {% for page_num in transactions.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+                {% if page_num == transactions.page %}
+                    <span class="active">{{ page_num }}</span>
+                {% else %}
+                    <a href="{{ url_for('reports.movement_history', page=page_num) }}">{{ page_num }}</a>
+                {% endif %}
+            {% else %}
+                <span>...</span>
+            {% endif %}
+        {% endfor %}
+
+        {% if transactions.has_next %}
+            <a href="{{ url_for('reports.movement_history', page=transactions.next_num) }}">Next →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Suppliers{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Suppliers</h1>
+        <p style="color: #718096; margin-top: 5px;">Manage suppliers and vendors</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('suppliers.create') }}" class="btn btn-primary">+ Add Supplier</a>
+    </div>
+</div>
+
+<div class="table-section">
+    <div class="table-header">
+        <h2>All Suppliers ({{ suppliers|length }})</h2>
+        <input type="text" id="searchInput" placeholder="Search suppliers..." class="form-control" style="width: 250px;"
+               oninput="searchTable('searchInput', 'suppliersTable')">
+    </div>
+
+    <table id="suppliersTable">
+        <thead>
+            <tr>
+                <th>Supplier Name</th>
+                <th>Contact Person</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Items Supplied</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for supplier in suppliers %}
+            <tr>
+                <td><strong>{{ supplier.supplier_name }}</strong></td>
+                <td>{{ supplier.contact_person or '-' }}</td>
+                <td>
+                    {% if supplier.email %}
+                        <a href="mailto:{{ supplier.email }}" style="color: #4299e1;">{{ supplier.email }}</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ supplier.phone or '-' }}</td>
+                <td style="text-align: center;">
+                    <span class="badge badge-info">{{ supplier.items|length }}</span>
+                </td>
+                <td>
+                    <a href="{{ url_for('suppliers.edit', id=supplier.supplier_id) }}" 
+                       class="btn btn-secondary btn-small">Edit</a>
+                    <form method="POST" action="{{ url_for('suppliers.delete', id=supplier.supplier_id) }}" 
+                          style="display: inline;">
+                        <button type="submit" class="btn btn-danger btn-small"
+                                onclick="return confirmDelete('{{ supplier.supplier_name }}')">
+                            Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="text-align: center; color: #718096; padding: 40px;">
+                    No suppliers found. <a href="{{ url_for('suppliers.create') }}">Add your first supplier</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

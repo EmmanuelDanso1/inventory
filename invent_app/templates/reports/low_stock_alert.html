@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Low Stock Alert{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Low Stock Alert</h1>
+        <p style="color: #718096; margin-top: 5px;">Items below reorder level</p>
+    </div>
+    <div class="header-actions">
+        <button onclick="exportTableToCSV('lowStockTable', 'low_stock_alert.csv')" class="btn btn-success">
+            Export CSV
+        </button>
+    </div>
+</div>
+
+<!-- Alert Summary -->
+<div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+    <div class="stat-card">
+        <div class="stat-info">
+            <h3>Low Stock Items</h3>
+            <div class="stat-value">{{ items|selectattr('current_stock', 'gt', 0)|list|length }}</div>
+        </div>
+        <div class="stat-icon orange">⚠️</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-info">
+            <h3>Out of Stock</h3>
+            <div class="stat-value">{{ items|selectattr('current_stock', 'eq', 0)|list|length }}</div>
+        </div>
+        <div class="stat-icon red">✕</div>
+    </div>
+</div>
+
+<div class="table-section">
+    <div class="table-header">
+        <h2>Items Requiring Attention</h2>
+        <input type="text" id="searchInput" placeholder="Search..." class="form-control" style="width: 250px;"
+               oninput="searchTable('searchInput', 'lowStockTable')">
+    </div>
+
+    <table id="lowStockTable">
+        <thead>
+            <tr>
+                <th>Priority</th>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th>Current Stock</th>
+                <th>Reorder Level</th>
+                <th>Supplier</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>
+                    {% if item.current_stock == 0 %}
+                        <span class="badge badge-danger">Critical</span>
+                    {% else %}
+                        <span class="badge badge-warning">Low</span>
+                    {% endif %}
+                </td>
+                <td><strong>{{ item.item_code }}</strong></td>
+                <td>{{ item.item_name }}</td>
+                <td>{{ item.category.category_name }}</td>
+                <td style="text-align: center;">
+                    <strong></strong>
+                        {{ item.current_stock }}
+                    </strong>
+                </td>
+                <td style="text-align: center;">{{ item.reorder_level }}</td>
+                <td>{{ item.supplier.supplier_name if item.supplier else 'N/A' }}</td>
+                <td>
+                    <a href="{{ url_for('transactions.stock_in', item_id=item.item_id) }}" 
+                       class="btn btn-success btn-small">Reorder</a>
+                    <a href="{{ url_for('items.detail', id=item.item_id) }}" 
+                       class="btn btn-primary btn-small">View</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" style="text-align: center; color: #48bb78; padding: 40px;">
+                    ✓ All items are adequately stocked
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -64,7 +64,7 @@
         <h2>Recent Transactions</h2>
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="Search transactions...">
-            <button class="btn btn-primary" onclick="searchTable()">Search</button>
+            <button class="btn btn-primary" onclick="searchTable('searchInput', 'transactionsTable')">Search</button>
         </div>
     </div>
 
@@ -125,41 +125,33 @@
 <!-- Chart Section -->
 <div class="chart-section">
     <h2 style="margin-bottom: 20px;">Stock Movement Trends (Last 30 Days)</h2>
-    <canvas id="stockChart"></canvas>
+    <canvas id="stockChart" style="max-height: 300px;"></canvas>
+</div>
+
+<!-- Hidden data elements for JavaScript (No red underlines!) -->
+<div id="chart-data" style="display: none;"
+     data-labels='{{ chart_labels|tojson }}'
+     data-stock-in='{{ stock_in_data|tojson }}'
+     data-stock-out='{{ stock_out_data|tojson }}'>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<!-- Load Chart.js from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Tab filtering
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            
-            const filterType = this.getAttribute('data-type');
-            const rows = document.querySelectorAll('#transactionsTable tbody tr');
-            
-            rows.forEach(row => {
-                if (filterType === 'all' || row.getAttribute('data-type') === filterType) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-    });
 
-    // Search functionality
-    function searchTable() {
-        const input = document.getElementById('searchInput').value.toLowerCase();
-        const rows = document.querySelectorAll('#transactionsTable tbody tr');
-        
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(input) ? '' : 'none';
-        });
-    }
+<!-- Load chart helper functions -->
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+
+<!-- Initialize charts - Pure JavaScript, no Jinja2! -->
+<script>
+    // Get data from hidden element
+    const chartDataElement = document.getElementById('chart-data');
+    const labels = JSON.parse(chartDataElement.dataset.labels);
+    const stockInData = JSON.parse(chartDataElement.dataset.stockIn);
+    const stockOutData = JSON.parse(chartDataElement.dataset.stockOut);
+    
+    // Create chart with pure JavaScript (no red underlines!)
+    createStockMovementChart('stockChart', labels, stockInData, stockOutData);
 </script>
 {% endblock %}

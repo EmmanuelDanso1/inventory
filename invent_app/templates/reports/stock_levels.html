@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Levels Report{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Stock Levels Report</h1>
+        <p style="color: #718096; margin-top: 5px;">Current inventory stock levels</p>
+    </div>
+    <div class="header-actions">
+        <button onclick="exportTableToCSV('stockTable', 'stock_levels.csv')" class="btn btn-success">
+            Export CSV
+        </button>
+        <button onclick="printPage()" class="btn btn-secondary">Print</button>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="table-section">
+    <div class="table-header">
+        <h2>All Items ({{ items|length }})</h2>
+        <div class="search-box">
+            <form method="GET" action="{{ url_for('reports.stock_levels') }}" style="display: flex; gap: 10px;">
+                <select name="category" class="form-control" style="width: 200px;" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category.category_id }}" 
+                                {% if request.args.get('category') == category.category_id|string %}selected{% endif %}>
+                            {{ category.category_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <input type="text" id="searchInput" placeholder="Search items..." class="form-control">
+                <button type="button" onclick="searchTable('searchInput', 'stockTable')" class="btn btn-primary">
+                    Search
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <table id="stockTable">
+        <thead>
+            <tr>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th>Current Stock</th>
+                <th>Reorder Level</th>
+                <th>Unit Price</th>
+                <th>Stock Value</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td><strong>{{ item.item_code }}</strong></td>
+                <td>
+                    <a href="{{ url_for('items.detail', id=item.item_id) }}" style="text-decoration: none; color: #4299e1;">
+                        {{ item.item_name }}
+                    </a>
+                </td>
+                <td>{{ item.category.category_name }}</td>
+                <td style="text-align: center; font-size: 16px;">
+                    <strong>{{ item.current_stock }}</strong>
+                </td>
+                <td style="text-align: center;">{{ item.reorder_level }}</td>
+                <td>${{ '%.2f'|format(item.unit_price) }}</td>
+                <td>${{ '%.2f'|format(item.current_stock * item.unit_price) }}</td>
+                <td>
+                    {% if item.current_stock == 0 %}
+                        <span class="badge badge-danger">Out of Stock</span>
+                    {% elif item.current_stock <= item.reorder_level %}
+                        <span class="badge badge-warning">Low Stock</span>
+                    {% else %}
+                        <span class="badge badge-success">In Stock</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" style="text-align: center; color: #718096; padding: 40px;">
+                    No items found
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr style="background: #f7fafc; font-weight: bold;">
+                <td colspan="3">Total</td>
+                <td style="text-align: center;">{{ items|sum(attribute='current_stock') }}</td>
+                <td colspan="2"></td>
+                <td>${{ '%.2f'|format(items|sum(attribute='current_stock') * items|sum(attribute='unit_price')) }}</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+{% endblock %}
