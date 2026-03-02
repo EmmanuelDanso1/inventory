@@ -6,11 +6,10 @@ load_dotenv(os.path.join(basedir, '.env'))
 
 class Config:
     # Flask
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
+    SECRET_KEY = os.environ.get('SECRET_KEY')
     
     # SQLAlchemy
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://postgres:password@localhost:5432/inventory_db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = os.environ.get('SQLALCHEMY_ECHO', 'False') == 'True'
     
@@ -32,9 +31,9 @@ class Config:
 #     DEBUG = True
 #     SQLALCHEMY_ECHO = True
 
-# class ProductionConfig(Config):
-#     DEBUG = False
-#     SQLALCHEMY_ECHO = False
+class ProductionConfig(Config):
+    DEBUG = False
+    SQLALCHEMY_ECHO = False
 
 # class TestingConfig(Config):
 #     TESTING = True
