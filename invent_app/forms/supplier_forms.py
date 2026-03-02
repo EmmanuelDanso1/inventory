@@ -8,7 +8,7 @@ from wtforms.validators import (
 )
 from invent_app import db
 
-from _invent_app.models.normalized.supplier import Supplier
+from invent_app.models.normalized.supplier import Supplier
 
 
 class SupplierForm(FlaskForm):

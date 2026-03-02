@@ -4,17 +4,15 @@ Flask Application Factory
 import os
 from dotenv import load_dotenv
 from flask import Flask, render_template, session
-from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from config import config
+from config import Config
 from datetime import timedelta
+from invent_app import db 
 
-# Initialize extensions
-db = SQLAlchemy()
-migrate = Migrate()
 load_dotenv()
+migrate = Migrate()
 
-def create_app(config_name='default'):
+def create_app():
     """
     Application factory pattern
     Creates and configures the Flask application
@@ -29,7 +27,7 @@ def create_app(config_name='default'):
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     
     # Load configuration
-    app.config.from_object(config[config_name])
+    app.config.from_object('config.Config')
     
     # Initialize extensions with app
     db.init_app(app)
@@ -43,22 +41,22 @@ def create_app(config_name='default'):
     
     # Register template filters
     register_template_filters(app)
-    
-    # Register shell context
-    register_shell_context(app)
+
+
+
     
     return app
 
 
 def register_blueprints(app):
     """Register all Flask blueprints"""
-    from app.routes.main import bp as main_bp
-    from app.routes.items import bp as items_bp
-    from app.routes.categories import bp as categories_bp
-    from app.routes.suppliers import bp as suppliers_bp
-    from app.routes.transactions import bp as transactions_bp
-    from app.routes.reports import bp as reports_bp
-    from app.routes.api import bp as api_bp
+    from invent_app.routes.main import bp as main_bp
+    from invent_app.routes.items import bp as items_bp
+    from invent_app.routes.categories import bp as categories_bp
+    from invent_app.routes.suppliers import bp as suppliers_bp
+    from invent_app.routes.transactions import bp as transactions_bp
+    from invent_app.routes.reports import bp as reports_bp
+    from invent_app.routes.api import bp as api_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(items_bp, url_prefix='/items')
