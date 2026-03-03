@@ -34,7 +34,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="unit_price">{{ form.unit_price.label }} *</label>
+                    <label for="unit_price">{{ form.unit_price.label }}</label>
                     {{ form.unit_price(class="form-control", placeholder="0.00", step="0.01", id="price_input") }}
                     {% if form.unit_price.errors %}
                         <div class="form-error">{{ form.unit_price.errors[0] }}</div>
@@ -44,7 +44,7 @@
                 <div class="form-group">
                     <label>Total Value</label>
                     <input type="text" class="form-control" id="total_value" readonly 
-                           style="background: #f7fafc; font-weight: bold; font-size: 18px;">
+                           style="background: #f7fafc; font-weight: bold; font-size: 18px;" value="$0.00">
                 </div>
             </div>
 
@@ -67,16 +67,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="transaction_date">{{ form.transaction_date.label }}</label>
-                    {{ form.transaction_date(class="form-control") }}
-                    {% if form.transaction_date.errors %}
-                        <div class="form-error">{{ form.transaction_date.errors[0] }}</div>
-                    {% endif %}
-                </div>
-
-                <div class="form-group">
                     <label for="notes">{{ form.notes.label }}</label>
-                    {{ form.notes(class="form-control", rows="3", placeholder="Additional notes...") }}
+                    {{ form.notes(class="form-control", rows="5", placeholder="Additional notes...") }}
                     {% if form.notes.errors %}
                         <div class="form-error">{{ form.notes.errors[0] }}</div>
                     {% endif %}
@@ -94,11 +86,13 @@
 <!-- Current Stock Info -->
 <div class="table-section">
     <h2 style="margin-bottom: 20px;">Selected Item Information</h2>
-    <div id="item_info" style="color: #718096;">
+    <div id="item_info" style="color: #718096; padding: 20px; background: #f7fafc; border-radius: 6px;">
         Select an item to view current stock information
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
     // Calculate total value
     function calculateTotal() {
@@ -119,13 +113,26 @@
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('item_info').innerHTML = `
-                        <p><strong>Item:</strong> ${data.item_name} (${data.item_code})</p>
-                        <p><strong>Current Stock:</strong> ${data.current_stock}</p>
-                        <p><strong>Category:</strong> ${data.category_name}</p>
-                        <p><strong>Unit Price:</strong> $${data.unit_price}</p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <p><strong>Item:</strong> ${data.item_name}</p>
+                                <p><strong>Code:</strong> ${data.item_code}</p>
+                            </div>
+                            <div>
+                                <p><strong>Current Stock:</strong> <span style="font-size: 18px; color: #4299e1;">${data.current_stock}</span></p>
+                                <p><strong>Unit Price:</strong> $${parseFloat(data.unit_price).toFixed(2)}</p>
+                            </div>
+                        </div>
                     `;
-                    document.getElementById('price_input').value = data.unit_price;
+                    // Auto-fill unit price
+                    document.getElementById('price_input').value = parseFloat(data.unit_price).toFixed(2);
                     calculateTotal();
+                })
+                .catch(error => {
+                    console.error('Error fetching item info:', error);
+                    document.getElementById('item_info').innerHTML = `
+                        <p style="color: #e53e3e;">Error loading item information</p>
+                    `;
                 });
         }
     });

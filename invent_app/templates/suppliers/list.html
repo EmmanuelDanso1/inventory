@@ -45,7 +45,7 @@
                 </td>
                 <td>{{ supplier.phone or '-' }}</td>
                 <td style="text-align: center;">
-                    <span class="badge badge-info">{{ supplier.items|length }}</span>
+                    <span class="badge badge-info">{{ supplier.items.count() }}</span>
                 </td>
                 <td>
                     <a href="{{ url_for('suppliers.edit', id=supplier.supplier_id) }}" 

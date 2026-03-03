@@ -54,7 +54,7 @@
 {% if low_stock_items > 0 %}
 <div class="alert alert-warning">
     <strong>⚠️ Low Stock Alert:</strong> {{ low_stock_items }} item(s) are below reorder level.
-    <a href="{{ url_for('reports.low_stock') }}">View Details →</a>
+    <a href="{{ url_for('reports.low_stock') }}" style="color: #744210; text-decoration: underline; margin-left: 10px;">View Details →</a>
 </div>
 {% endif %}
 
@@ -102,9 +102,9 @@
                 </td>
                 <td>
                     {% if transaction.transaction_type.type_name == 'STOCK_IN' %}
-                        +{{ transaction.quantity }}
+                        <span style="color: #48bb78; font-weight: bold;">+{{ transaction.quantity }}</span>
                     {% else %}
-                        -{{ transaction.quantity }}
+                        <span style="color: #ed8936; font-weight: bold;">-{{ transaction.quantity }}</span>
                     {% endif %}
                 </td>
                 <td>{{ transaction.transaction_date.strftime('%Y-%m-%d %H:%M') }}</td>
@@ -128,7 +128,50 @@
     <canvas id="stockChart" style="max-height: 300px;"></canvas>
 </div>
 
-<!-- Hidden data elements for JavaScript (No red underlines!) -->
+<!-- Quick Links Section -->
+<div class="stats-grid" style="margin-top: 30px;">
+    <a href="{{ url_for('reports.stock_levels') }}" style="text-decoration: none;">
+        <div class="stat-card" style="cursor: pointer; transition: transform 0.3s;">
+            <div class="stat-info">
+                <h3>Stock Levels</h3>
+                <p style="color: #718096; font-size: 14px; margin-top: 5px;">View all inventory</p>
+            </div>
+            <div class="stat-icon blue">📊</div>
+        </div>
+    </a>
+
+    <a href="{{ url_for('reports.movement_history') }}" style="text-decoration: none;">
+        <div class="stat-card" style="cursor: pointer; transition: transform 0.3s;">
+            <div class="stat-info">
+                <h3>Movement History</h3>
+                <p style="color: #718096; font-size: 14px; margin-top: 5px;">Transaction history</p>
+            </div>
+            <div class="stat-icon green">📈</div>
+        </div>
+    </a>
+
+    <a href="{{ url_for('reports.category_summary') }}" style="text-decoration: none;">
+        <div class="stat-card" style="cursor: pointer; transition: transform 0.3s;">
+            <div class="stat-info">
+                <h3>Category Summary</h3>
+                <p style="color: #718096; font-size: 14px; margin-top: 5px;">By category breakdown</p>
+            </div>
+            <div class="stat-icon orange">📁</div>
+        </div>
+    </a>
+
+    <a href="{{ url_for('reports.inventory_valuation') }}" style="text-decoration: none;">
+        <div class="stat-card" style="cursor: pointer; transition: transform 0.3s;">
+            <div class="stat-info">
+                <h3>Valuation</h3>
+                <p style="color: #718096; font-size: 14px; margin-top: 5px;">Inventory worth</p>
+            </div>
+            <div class="stat-icon" style="background: #e0e7ff; color: #5a67d8;">💰</div>
+        </div>
+    </a>
+</div>
+
+<!-- Hidden data for chart -->
 <div id="chart-data" style="display: none;"
      data-labels='{{ chart_labels|tojson }}'
      data-stock-in='{{ stock_in_data|tojson }}'
@@ -140,10 +183,6 @@
 <!-- Load Chart.js from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Load chart helper functions -->
-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
-
-<!-- Initialize charts - Pure JavaScript, no Jinja2! -->
 <script>
     // Get data from hidden element
     const chartDataElement = document.getElementById('chart-data');
@@ -151,7 +190,90 @@
     const stockInData = JSON.parse(chartDataElement.dataset.stockIn);
     const stockOutData = JSON.parse(chartDataElement.dataset.stockOut);
     
-    // Create chart with pure JavaScript (no red underlines!)
-    createStockMovementChart('stockChart', labels, stockInData, stockOutData);
+    // Create chart with pure JavaScript
+    const ctx = document.getElementById('stockChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Stock In',
+                    data: stockInData,
+                    borderColor: '#48bb78',
+                    backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }, {
+                    label: 'Stock Out',
+                    data: stockOutData,
+                    borderColor: '#ed8936',
+                    backgroundColor: 'rgba(237, 137, 54, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#4299e1',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            color: '#718096'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#718096'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    }
+    
+    // Add hover effect to quick link cards
+    document.querySelectorAll('.stat-card[style*="cursor: pointer"]').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
 </script>
 {% endblock %}

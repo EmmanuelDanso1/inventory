@@ -28,15 +28,15 @@
                 <div class="form-group">
                     <label for="quantity">{{ form.quantity.label }} *</label>
                     {{ form.quantity(class="form-control", placeholder="0", id="quantity_input") }}
-                    <small style="color: #718096;">Available: <span id="available_stock">-</span></small>
                     {% if form.quantity.errors %}
                         <div class="form-error">{{ form.quantity.errors[0] }}</div>
                     {% endif %}
+                    <small style="color: #718096;">Available stock will be shown after selecting an item</small>
                 </div>
 
                 <div class="form-group">
                     <label for="reference_number">{{ form.reference_number.label }}</label>
-                    {{ form.reference_number(class="form-control", placeholder="REQ-123, ORDER-456") }}
+                    {{ form.reference_number(class="form-control", placeholder="SO-123, Delivery-456") }}
                     {% if form.reference_number.errors %}
                         <div class="form-error">{{ form.reference_number.errors[0] }}</div>
                     {% endif %}
@@ -46,16 +46,8 @@
             <!-- Right Column -->
             <div>
                 <div class="form-group">
-                    <label for="transaction_date">{{ form.transaction_date.label }}</label>
-                    {{ form.transaction_date(class="form-control") }}
-                    {% if form.transaction_date.errors %}
-                        <div class="form-error">{{ form.transaction_date.errors[0] }}</div>
-                    {% endif %}
-                </div>
-
-                <div class="form-group">
                     <label for="notes">{{ form.notes.label }}</label>
-                    {{ form.notes(class="form-control", rows="5", placeholder="Reason for stock out...") }}
+                    {{ form.notes(class="form-control", rows="8", placeholder="Reason for stock out, destination, etc.") }}
                     {% if form.notes.errors %}
                         <div class="form-error">{{ form.notes.errors[0] }}</div>
                     {% endif %}
@@ -70,30 +62,59 @@
     </form>
 </div>
 
+<!-- Current Stock Info -->
+<div class="table-section">
+    <h2 style="margin-bottom: 20px;">Selected Item Information</h2>
+    <div id="item_info" style="color: #718096; padding: 20px; background: #f7fafc; border-radius: 6px;">
+        Select an item to view current stock information
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-    // Show item info and validate quantity
+    // Show item info when selected
     document.getElementById('item_select').addEventListener('change', function() {
         const itemId = this.value;
         if (itemId) {
             fetch(`/api/items/${itemId}`)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('available_stock').textContent = data.current_stock;
-                    document.getElementById('quantity_input').max = data.current_stock;
+                    const stockStatus = data.current_stock === 0 ? 
+                        '<span style="color: #e53e3e; font-weight: bold;">OUT OF STOCK</span>' :
+                        data.current_stock <= 10 ?
+                        `<span style="color: #ed8936; font-weight: bold;">${data.current_stock} (Low Stock)</span>` :
+                        `<span style="color: #48bb78; font-weight: bold;">${data.current_stock}</span>`;
+                    
+                    document.getElementById('item_info').innerHTML = `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <p><strong>Item:</strong> ${data.item_name}</p>
+                                <p><strong>Code:</strong> ${data.item_code}</p>
+                                <p><strong>Category:</strong> ${data.category}</p>
+                            </div>
+                            <div>
+                                <p><strong>Available Stock:</strong> ${stockStatus}</p>
+                                <p><strong>Unit Price:</strong> $${parseFloat(data.unit_price).toFixed(2)}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Set max quantity to available stock
+                    const quantityInput = document.getElementById('quantity_input');
+                    quantityInput.max = data.current_stock;
+                    
+                    // Warn if out of stock
+                    if (data.current_stock === 0) {
+                        showNotification('This item is out of stock!', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching item info:', error);
+                    document.getElementById('item_info').innerHTML = `
+                        <p style="color: #e53e3e;">Error loading item information</p>
+                    `;
                 });
-        }
-    });
-
-    // Validate quantity doesn't exceed available stock
-    document.getElementById('quantity_input').addEventListener('input', function() {
-        const available = parseInt(document.getElementById('available_stock').textContent);
-        const quantity = parseInt(this.value);
-        
-        if (quantity > available) {
-            this.style.borderColor = '#e53e3e';
-            alert('Quantity cannot exceed available stock!');
-        } else {
-            this.style.borderColor = '#e2e8f0';
         }
     });
 </script>

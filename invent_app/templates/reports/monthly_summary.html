@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Summary - {{ month_name }}{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Monthly Summary</h1>
+        <p style="color: #718096; margin-top: 5px;">{{ month_name }}</p>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-info">
+            <h3>Total Transactions</h3>
+            <div class="stat-value">{{ monthly_transactions }}</div>
+        </div>
+        <div class="stat-icon blue">🔄</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-info">
+            <h3>Stock In</h3>
+            <div class="stat-value">+{{ stock_in_count }}</div>
+        </div>
+        <div class="stat-icon green">📥</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-info">
+            <h3>Stock Out</h3>
+            <div class="stat-value">-{{ stock_out_count }}</div>
+        </div>
+        <div class="stat-icon orange">📤</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-info">
+            <h3>Net Change</h3>
+            <div class="stat-value">{{ stock_in_count - stock_out_count }}</div>
+        </div>
+        <div class="stat-icon {% if stock_in_count > stock_out_count %}green{% else %}red{% endif %}">
+            {% if stock_in_count > stock_out_count %}📈{% else %}📉{% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Most Active Items -->
+<div class="table-section">
+    <h2 style="margin-bottom: 20px;">Top 10 Most Active Items</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Item Name</th>
+                <th>Transaction Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in active_items %}
+            <tr>
+                <td style="text-align: center;"><strong>{{ loop.index }}</strong></td>
+                <td>{{ item.item_name }}</td>
+                <td style="text-align: center;">
+                    <span class="badge badge-info">{{ item.transaction_count }}</span>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3" style="text-align: center; color: #718096;">No transactions this month</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,4 +1,4 @@
-{% if pagination.pages > 1 %}
+{% if pagination and pagination.pages > 1 %}
 <div class="pagination">
     {% if pagination.has_prev %}
         <a href="{{ url_for(request.endpoint, page=pagination.prev_num, **request.args) }}">

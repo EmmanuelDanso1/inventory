@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory Valuation Report{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Inventory Valuation Report</h1>
+        <p style="color: #718096; margin-top: 5px;">Total inventory worth analysis</p>
+    </div>
+</div>
+
+<!-- Total Value Card -->
+<div class="stat-card" style="margin-bottom: 30px; padding: 40px; text-align: center;">
+    <div>
+        <h2 style="color: #718096; margin-bottom: 10px;">Total Inventory Value</h2>
+        <div style="font-size: 48px; font-weight: bold; color: #2d3748;">
+            ${{ '%.2f'|format(total_value) }}
+        </div>
+    </div>
+</div>
+
+<!-- Value by Category -->
+<div class="table-section">
+    <h2 style="margin-bottom: 20px;">Value by Category</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Value</th>
+                <th>% of Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cat in category_values %}
+            <tr>
+                <td><strong>{{ cat.category_name }}</strong></td>
+                <td>${{ '%.2f'|format(cat.value or 0) }}</td>
+                <td>
+                    {% set pct = ((cat.value or 0) / total_value * 100 if total_value > 0 else 0)|int %}
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span>{{ '%.1f'|format((cat.value or 0) / total_value * 100 if total_value > 0 else 0) }}%</span>
+                        <div style="flex: 1; background: #e2e8f0; height: 8px; border-radius: 4px;">
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Top 10 Most Valuable Items -->
+<div class="table-section">
+    <h2 style="margin-bottom: 20px;">Top 10 Most Valuable Items</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Item Name</th>
+                <th>Stock</th>
+                <th>Unit Price</th>
+                <th>Total Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in top_items %}
+            <tr>
+                <td style="text-align: center;"><strong>{{ loop.index }}</strong></td>
+                <td>{{ item.item_name }}</td>
+                <td style="text-align: center;">{{ item.current_stock }}</td>
+                <td>${{ '%.2f'|format(item.unit_price) }}</td>
+                <td><strong>${{ '%.2f'|format(item.total_value) }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

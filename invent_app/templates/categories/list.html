@@ -36,7 +36,7 @@
                 <td><strong>{{ category.category_name }}</strong></td>
                 <td>{{ category.description or '-' }}</td>
                 <td style="text-align: center;">
-                    <span class="badge badge-info">{{ category.items|length }}</span>
+                    <span class="badge badge-info">{{ category.items.count() }}</span>
                 </td>
                 <td>{{ category.created_at.strftime('%Y-%m-%d') }}</td>
                 <td>
