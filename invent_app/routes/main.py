@@ -65,11 +65,23 @@ def dashboard():
       .order_by('date')\
       .all()
     
-    # Prepare chart data
-    chart_labels = [str(d[0]) for d in stock_in_data]
-    stock_in_values = [int(d[1]) if d[1] else 0 for d in stock_in_data]
-    stock_out_values = [int(d[1]) if d[1] else 0 for d in stock_out_data]
-    
+    # Prepare chart data - generate all 30 days regardless of transactions
+    chart_labels = []
+    stock_in_values = []
+    stock_out_values = []
+
+    # Convert query results to dicts for easy lookup
+    stock_in_dict = {str(row.date): int(row.total or 0) for row in stock_in_data}
+    stock_out_dict = {str(row.date): int(row.total or 0) for row in stock_out_data}
+
+    # Fill in all 30 days, using 0 where no transactions exist
+    for i in range(30):
+        day = (datetime.utcnow() - timedelta(days=29 - i)).date()
+        day_str = str(day)
+        chart_labels.append(day.strftime('%b %d'))
+        stock_in_values.append(stock_in_dict.get(day_str, 0))
+        stock_out_values.append(stock_out_dict.get(day_str, 0))
+        
     return render_template(
         'reports/dashboard.html',
         total_items=total_items,
