@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Performance{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>Performance</h1>
+        <p style="color: #718096; margin-top: 5px;">Database performance comparison report</p>
+    </div>
+</div>
+
+<div class="table-section" style="text-align: center; padding: 60px;">
+    <div style="font-size: 48px; margin-bottom: 20px;">⚡</div>
+    <h2 style="color: #2d3748; margin-bottom: 10px;">Performance Report</h2>
+    <p style="color: #718096;">This section is coming soon. It will compare normalized vs denormalized schema performance.</p>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary" style="margin-top: 20px;">Back to Dashboard</a>
+</div>
+{% endblock %}
