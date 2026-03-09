@@ -152,12 +152,7 @@ def movement_history():
 # REPORT 4: CATEGORY SUMMARY
 @bp.route('/category-summary')
 def category_summary():
-    """
-    Summary report by category
-    Shows inventory distribution across categories
-    """
-    # Get all categories with item counts and values
-    categories_data = db.session.query(
+    categories_raw = db.session.query(
         Category.category_name,
         func.count(Item.item_id).label('item_count'),
         func.sum(Item.current_stock).label('total_stock'),
@@ -165,12 +160,19 @@ def category_summary():
     ).outerjoin(Item, Category.category_id == Item.category_id)\
      .group_by(Category.category_id, Category.category_name)\
      .all()
-    
-    # Calculate totals
-    grand_total_items = sum(c.item_count for c in categories_data)
-    grand_total_stock = sum(c.total_stock or 0 for c in categories_data)
-    grand_total_value = sum(float(c.total_value or 0) for c in categories_data)
-    
+
+    # Convert all Decimal/int to plain Python types before passing to template
+    categories_data = [{
+        'category_name': c.category_name,
+        'item_count': int(c.item_count or 0),
+        'total_stock': int(c.total_stock or 0),
+        'total_value': float(c.total_value or 0)
+    } for c in categories_raw]
+
+    grand_total_items = sum(c['item_count'] for c in categories_data)
+    grand_total_stock = sum(c['total_stock'] for c in categories_data)
+    grand_total_value = sum(c['total_value'] for c in categories_data)
+
     return render_template(
         'reports/category_summary.html',
         categories_data=categories_data,
@@ -211,26 +213,19 @@ def supplier_performance():
 # REPORT 6: INVENTORY VALUATION
 @bp.route('/inventory-valuation')
 def inventory_valuation():
-    """
-    Inventory valuation report
-    Shows total inventory value broken down by various dimensions
-    """
-    # Total inventory value
-    total_value = db.session.query(
+    total_value = float(db.session.query(
         func.sum(Item.current_stock * Item.unit_price)
-    ).scalar() or 0
-    
-    # Value by category
-    category_values = db.session.query(
+    ).scalar() or 0)
+
+    category_values_raw = db.session.query(
         Category.category_name,
         func.sum(Item.current_stock * Item.unit_price).label('value')
     ).join(Item, Category.category_id == Item.category_id)\
      .group_by(Category.category_id, Category.category_name)\
      .order_by(func.sum(Item.current_stock * Item.unit_price).desc())\
      .all()
-    
-    # Top 10 most valuable items
-    top_items = db.session.query(
+
+    top_items_raw = db.session.query(
         Item.item_name,
         Item.current_stock,
         Item.unit_price,
@@ -238,10 +233,24 @@ def inventory_valuation():
     ).order_by((Item.current_stock * Item.unit_price).desc())\
      .limit(10)\
      .all()
-    
+
+    from types import SimpleNamespace
+
+    category_values = [SimpleNamespace(
+        category_name=c.category_name,
+        value=float(c.value or 0)
+    ) for c in category_values_raw]
+
+    top_items = [SimpleNamespace(
+        item_name=i.item_name,
+        current_stock=int(i.current_stock or 0),
+        unit_price=float(i.unit_price or 0),
+        total_value=float(i.total_value or 0)
+    ) for i in top_items_raw]
+
     return render_template(
         'reports/inventory_valuation.html',
-        total_value=float(total_value),
+        total_value=total_value,
         category_values=category_values,
         top_items=top_items
     )

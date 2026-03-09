@@ -67,7 +67,12 @@ def delete(id):
         return redirect(url_for('categories.list'))
     
     if category.items:
-        flash('Cannot delete category with existing items', 'danger')
+        item_count = category.items.count()
+        flash(
+            f'Cannot delete "{category.category_name}" — it has {item_count} item(s). '
+            f'Please reassign or delete those items first.',
+            'danger'
+        )
         return redirect(url_for('categories.list'))
     
     category_name = category.category_name

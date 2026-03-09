@@ -148,10 +148,9 @@ def delete(id):
         flash('Item not found', 'danger')
         return redirect(url_for('items.list'))
     
-    # Check if item has transactions
-    if item.transactions:
-        flash('Cannot delete item with existing transactions', 'danger')
-        return redirect(url_for('items.detail', id=id))
+    # Delete all related transactions first
+    for transaction in item.transactions:
+        db.session.delete(transaction)
     
     item_name = item.item_name
     db.session.delete(item)

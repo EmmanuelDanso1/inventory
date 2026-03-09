@@ -47,16 +47,16 @@
                 <td style="text-align: center;">
                     <span class="badge badge-info">{{ supplier.items.count() }}</span>
                 </td>
-                <td>
+                <td style="white-space: nowrap;">
                     <a href="{{ url_for('suppliers.edit', id=supplier.supplier_id) }}" 
                        class="btn btn-secondary btn-small">Edit</a>
-                    <form method="POST" action="{{ url_for('suppliers.delete', id=supplier.supplier_id) }}" 
-                          style="display: inline;">
-                        <button type="submit" class="btn btn-danger btn-small"
-                                onclick="return confirmDelete('{{ supplier.supplier_name }}')">
-                            Delete
-                        </button>
-                    </form>
+                    <button class="btn btn-danger btn-small"
+                            data-bs-toggle="modal"
+                            data-bs-target="#deleteModal"
+                            data-supplier-id="{{ supplier.supplier_id }}"
+                            data-supplier-name="{{ supplier.supplier_name }}">
+                        Delete
+                    </button>
                 </td>
             </tr>
             {% else %}
@@ -69,4 +69,42 @@
         </tbody>
     </table>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="POST" id="deleteForm">
+            <input type="hidden" name="csrf_token" value="{{ session.get('_csrf_token', '') }}">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete <strong id="deleteSupplierName"></strong>?
+                    <p class="text-muted mt-2 mb-0" style="font-size: 14px;">
+                        This cannot be undone. Suppliers with existing items cannot be deleted.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const deleteModal = document.getElementById('deleteModal');
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const supplierId = button.getAttribute('data-supplier-id');
+            const supplierName = button.getAttribute('data-supplier-name');
+            document.getElementById('deleteSupplierName').textContent = supplierName;
+            document.getElementById('deleteForm').action = '/suppliers/' + supplierId + '/delete';
+        });
+    });
+</script>
 {% endblock %}
