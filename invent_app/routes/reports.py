@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from invent_app import db
 from invent_app.models.normalized import Transaction, TransactionType
 from invent_app.models.normalized.item import Item
@@ -316,14 +316,53 @@ def monthly_summary():
 
 
 # REPORT 8: PERFORMANCE COMPARISON (For Research)
-@bp.route('/performance')
+@bp.route('/performance', methods=['GET', 'POST'])
 def performance():
-    """
-    Database performance comparison report
-    Compares normalized vs denormalized schema performance
-    """
-    return render_template('reports/performance.html')
+    from invent_app.models.denormalized.item_denorm import ItemDenorm
+    from invent_app.models.denormalized.transaction_denorm import TransactionDenorm
 
+    query_results = []
+    write_results = []
+    error = None
+
+    if request.method == 'POST':
+        try:
+            from performance.benchmarks.query_benchmarks import run_all_benchmarks
+            from performance.benchmarks.write_benchmarks import run_write_benchmarks
+            query_results = run_all_benchmarks()
+            write_results = run_write_benchmarks()
+        except Exception as e:
+            db.session.rollback()
+            error = str(e)
+            flash(str(e), 'danger')
+
+    # Row counts for context
+    try:
+        norm_items        = db.session.query(Item).count()
+        norm_transactions = db.session.query(Transaction).count()
+    except Exception:
+        db.session.rollback()
+        norm_items        = 0
+        norm_transactions = 0
+
+    try:
+        denorm_items        = db.session.query(ItemDenorm).count()
+        denorm_transactions = db.session.query(TransactionDenorm).count()
+    except Exception:
+        db.session.rollback()
+        denorm_items        = 0
+        denorm_transactions = 0
+
+    return render_template(
+        'reports/performance.html',
+        results=query_results,
+        write_results=write_results,
+        error=error,
+        norm_items=norm_items,
+        norm_transactions=norm_transactions,
+        denorm_items=denorm_items,
+        denorm_transactions=denorm_transactions,
+    )
 
 # API ENDPOINT: Export Report Data
 @bp.route('/export/<report_type>')

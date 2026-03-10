@@ -1,19 +1,162 @@
 {% extends "base.html" %}
-
-{% block title %}Performance{% endblock %}
-
+{% block title %}Performance Comparison{% endblock %}
 {% block content %}
 <div class="header">
     <div>
-        <h1>Performance</h1>
-        <p style="color: #718096; margin-top: 5px;">Database performance comparison report</p>
+        <h1>⚡ Performance Comparison</h1>
+        <p style="color: #718096; margin-top: 5px;">Normalized vs Denormalized schema benchmark results</p>
+    </div>
+    <div class="header-actions">
+        <form method="POST" action="{{ url_for('reports.performance') }}" style="display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ session.get('_csrf_token', '') }}">
+            <button type="submit" class="btn btn-primary">▶ Run Benchmarks</button>
+        </form>
     </div>
 </div>
 
-<div class="table-section" style="text-align: center; padding: 60px;">
-    <div style="font-size: 48px; margin-bottom: 20px;">⚡</div>
-    <h2 style="color: #2d3748; margin-bottom: 10px;">Performance Report</h2>
-    <p style="color: #718096;">This section is coming soon. It will compare normalized vs denormalized schema performance.</p>
-    <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary" style="margin-top: 20px;">Back to Dashboard</a>
+<div class="stats-grid" style="margin-bottom: 30px;">
+    <div class="stat-card" style="border-left: 4px solid #4299e1;">
+        <div class="stat-info">
+            <h3 style="color: #4299e1;">🗂 Normalized (3NF)</h3>
+            <p style="color: #718096; font-size: 13px; margin-top: 8px;">Data split across multiple tables. Uses foreign keys and JOINs. Better for data integrity.</p>
+            <p style="font-size: 12px; color: #718096; margin-top: 6px;">✓ No duplication &nbsp; ✓ Easy updates &nbsp; ✗ Slower reads</p>
+        </div>
+    </div>
+    <div class="stat-card" style="border-left: 4px solid #ed8936;">
+        <div class="stat-info">
+            <h3 style="color: #ed8936;">📋 Denormalized</h3>
+            <p style="color: #718096; font-size: 13px; margin-top: 8px;">All data in one flat table. No JOINs required. Better for read-heavy reporting.</p>
+            <p style="font-size: 12px; color: #718096; margin-top: 6px;">✓ Faster reads &nbsp; ✓ Simpler queries &nbsp; ✗ Data duplication</p>
+        </div>
+    </div>
+    <div class="stat-card" style="border-left: 4px solid #9f7aea;">
+        <div class="stat-info">
+            <h3 style="color: #9f7aea;">📊 Benchmark Info</h3>
+            <p style="color: #718096; font-size: 13px; margin-top: 8px;">Each query runs <strong>5 iterations</strong>. Results show avg, min, max in milliseconds.</p>
+            <p style="font-size: 12px; color: #718096; margin-top: 6px;">Lower ms = faster. Cache cleared between runs.</p>
+        </div>
+    </div>
 </div>
+
+{% if results %}
+{% set norm_wins = results | selectattr('winner', 'equalto', 'normalized') | list | length %}
+{% set denorm_wins = results | selectattr('winner', 'equalto', 'denormalized') | list | length %}
+<div class="stat-card" style="margin-bottom: 30px; padding: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+    <div>
+        <h2 style="margin: 0;">Benchmark Summary</h2>
+        <p style="color: #718096; margin: 4px 0 0;">{{ results | length }} queries tested · 5 iterations each</p>
+    </div>
+    <div style="display: flex; gap: 20px; align-items: center;">
+        <div style="text-align: center;">
+            <div style="font-size: 32px; font-weight: bold; color: #4299e1;">{{ norm_wins }}</div>
+            <div style="font-size: 13px; color: #718096;">Normalized Wins</div>
+        </div>
+        <div style="font-size: 24px; color: #cbd5e0;">vs</div>
+        <div style="text-align: center;">
+            <div style="font-size: 32px; font-weight: bold; color: #ed8936;">{{ denorm_wins }}</div>
+            <div style="font-size: 13px; color: #718096;">Denormalized Wins</div>
+        </div>
+    </div>
+</div>
+
+<div class="table-section">
+    <h2 style="margin-bottom: 20px;">Query Benchmark Results</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Query</th>
+                <th>Description</th>
+                <th style="color: #4299e1;">Normalized (ms)</th>
+                <th style="color: #ed8936;">Denormalized (ms)</th>
+                <th>Winner</th>
+                <th>Difference</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in results %}
+            <tr>
+                <td><strong>{{ r.name }}</strong></td>
+                <td style="color: #718096; font-size: 13px;">{{ r.description }}</td>
+                <td>
+                    {% set norm_color = '#48bb78' if r.winner == 'normalized' else '#2d3748' %}
+                    <strong >{{ r.normalized.avg_ms }} ms</strong>
+                    <div style="font-size: 11px; color: #a0aec0;">min: {{ r.normalized.min_ms }} / max: {{ r.normalized.max_ms }}</div>
+                    <div style="font-size: 11px; color: #a0aec0;">{{ r.normalized.result_count }} rows</div>
+                </td>
+                <td>
+                    {% set denorm_color = '#48bb78' if r.winner == 'denormalized' else '#2d3748' %}
+                    <strong >{{ r.denormalized.avg_ms }} ms</strong>
+                    <div style="font-size: 11px; color: #a0aec0;">min: {{ r.denormalized.min_ms }} / max: {{ r.denormalized.max_ms }}</div>
+                    <div style="font-size: 11px; color: #a0aec0;">{{ r.denormalized.result_count }} rows</div>
+                </td>
+                <td>
+                    {% if r.winner == 'normalized' %}
+                        <span style="background:#ebf8ff;color:#2b6cb0;padding:4px 10px;border-radius:20px;font-size:12px;">🗂 Normalized</span>
+                    {% elif r.winner == 'denormalized' %}
+                        <span style="background:#fffaf0;color:#c05621;padding:4px 10px;border-radius:20px;font-size:12px;">📋 Denormalized</span>
+                    {% else %}
+                        <span class="badge badge-info">Tie</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if r.diff_ms > 0 %}
+                        <span style="color:#48bb78;font-weight:bold;">{{ r.diff_ms }} ms faster</span>
+                    {% else %}—{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+<div id="perf-data" style="display:none;"
+     data-labels='{{ results | map(attribute="name") | list | tojson }}'
+     data-normalized='{{ results | map(attribute="normalized") | map(attribute="avg_ms") | list | tojson }}'
+     data-denormalized='{{ results | map(attribute="denormalized") | map(attribute="avg_ms") | list | tojson }}'>
+</div>
+
+{% else %}
+<div class="table-section" style="text-align:center; padding:80px 40px;">
+    <div style="font-size:64px; margin-bottom:20px;">⚡</div>
+    <h2 style="color:#2d3748; margin-bottom:10px;">No Results Yet</h2>
+    <p style="color:#718096; margin-bottom:30px;">Click <strong>Run Benchmarks</strong> to compare query performance between both schemas.</p>
+    <form method="POST" action="{{ url_for('reports.performance') }}">
+        <input type="hidden" name="csrf_token" value="{{ session.get('_csrf_token', '') }}">
+        <button type="submit" class="btn btn-primary" style="font-size:16px; padding:12px 30px;">▶ Run Benchmarks Now</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if results %}
+<script>
+    const perfData = document.getElementById('perf-data');
+    const labels = JSON.parse(perfData.dataset.labels);
+    const normalizedData = JSON.parse(perfData.dataset.normalized);
+    const denormalizedData = JSON.parse(perfData.dataset.denormalized);
+    const ctx = document.getElementById('perfChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Normalized (ms)', data: normalizedData, backgroundColor: 'rgba(66,153,225,0.7)', borderColor: '#4299e1', borderWidth: 1, borderRadius: 4 },
+                    { label: 'Denormalized (ms)', data: denormalizedData, backgroundColor: 'rgba(237,137,54,0.7)', borderColor: '#ed8936', borderWidth: 1, borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y} ms` } } },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Time (ms)', color: '#718096' }, ticks: { color: '#718096' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { ticks: { color: '#718096' }, grid: { display: false } }
+                }
+            }
+        });
+    }
+</script>
+{% endif %}
 {% endblock %}
