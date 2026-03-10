@@ -27,7 +27,7 @@ class StockInForm(FlaskForm):
     )
     
     unit_price = DecimalField(
-        'Unit Price ($)',
+        'Unit Price (£)',
         validators=[
             Optional(),
             NumberRange(min=0, message='Price cannot be negative')

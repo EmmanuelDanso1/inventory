@@ -32,7 +32,7 @@
             </p>
         </div>
         <div>
-            <p><strong>Unit Price:</strong> ${{ '%.2f'|format(item.unit_price) }}</p>
+            <p><strong>Unit Price:</strong> £{{ '%.2f'|format(item.unit_price) }}</p>
             <p><strong>Current Stock:</strong> 
                 <span style="font-size: 18px; font-weight: bold;">{{ item.current_stock }}</span>
                 {% if item.current_stock <= item.reorder_level %}

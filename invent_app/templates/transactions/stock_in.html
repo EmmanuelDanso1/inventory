@@ -44,7 +44,7 @@
                 <div class="form-group">
                     <label>Total Value</label>
                     <input type="text" class="form-control" id="total_value" readonly 
-                           style="background: #f7fafc; font-weight: bold; font-size: 18px;" value="$0.00">
+                           style="background: #f7fafc; font-weight: bold; font-size: 18px;" value="£0.00">
                 </div>
             </div>
 
@@ -99,7 +99,7 @@
         const quantity = parseFloat(document.getElementById('quantity_input').value) || 0;
         const price = parseFloat(document.getElementById('price_input').value) || 0;
         const total = quantity * price;
-        document.getElementById('total_value').value = '$' + total.toFixed(2);
+        document.getElementById('total_value').value = '£' + total.toFixed(2);
     }
 
     document.getElementById('quantity_input').addEventListener('input', calculateTotal);

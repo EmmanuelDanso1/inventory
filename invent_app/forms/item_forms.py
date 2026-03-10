@@ -55,7 +55,7 @@ class ItemForm(FlaskForm):
     )
     
     unit_price = DecimalField(
-        'Unit Price ($)',
+        'Unit Price (£)',
         validators=[
             DataRequired(message='Unit price is required'),
             NumberRange(min=0.01, message='Price must be greater than 0')

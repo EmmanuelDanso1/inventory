@@ -52,7 +52,7 @@ class SupplierForm(FlaskForm):
     )
     
     address = TextAreaField(
-        'Address',
+        'Location/Address',
         validators=[Optional()],
         render_kw={'placeholder': 'Enter supplier address...', 'rows': 3}
     )
