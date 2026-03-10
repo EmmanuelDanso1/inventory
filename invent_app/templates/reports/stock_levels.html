@@ -66,8 +66,8 @@
                     <strong>{{ item.current_stock }}</strong>
                 </td>
                 <td style="text-align: center;">{{ item.reorder_level }}</td>
-                <td>${{ '%.2f'|format(item.unit_price) }}</td>
-                <td>${{ '%.2f'|format(item.current_stock * item.unit_price) }}</td>
+                <td>£{{ '%.2f'|format(item.unit_price) }}</td>
+                <td>£{{ '%.2f'|format(item.current_stock * item.unit_price) }}</td>
                 <td>
                     {% if item.current_stock == 0 %}
                         <span class="badge badge-danger">Out of Stock</span>
@@ -91,7 +91,7 @@
                 <td colspan="3">Total</td>
                 <td style="text-align: center;">{{ items|sum(attribute='current_stock') }}</td>
                 <td colspan="2"></td>
-                <td>${{ '%.2f'|format(items|sum(attribute='current_stock') * items|sum(attribute='unit_price')) }}</td>
+                <td>£{{ '%.2f'|format(items|sum(attribute='current_stock') * items|sum(attribute='unit_price')) }}</td>
                 <td></td>
             </tr>
         </tfoot>

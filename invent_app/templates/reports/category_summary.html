@@ -31,7 +31,7 @@
     <div class="stat-card">
         <div class="stat-info">
             <h3>Total Value</h3>
-            <div class="stat-value">${{ '%.2f'|format(grand_total_value) }}</div>
+            <div class="stat-value">£{{ '%.2f'|format(grand_total_value) }}</div>
         </div>
         <div class="stat-icon orange">💰</div>
     </div>
@@ -56,7 +56,7 @@
                 <td><strong>{{ cat.category_name }}</strong></td>
                 <td style="text-align: center;">{{ cat.item_count }}</td>
                 <td style="text-align: center;">{{ cat.total_stock or 0 }}</td>
-                <td>${{ '%.2f'|format(cat.total_value or 0) }}</td>
+                <td>£{{ '%.2f'|format(cat.total_value or 0) }}</td>
                 <td style="text-align: center;">
                     {{ '%.1f'|format((cat.total_value or 0) / grand_total_value * 100 if grand_total_value > 0 else 0) }}%
                 </td>
@@ -68,7 +68,7 @@
                 <td>TOTAL</td>
                 <td style="text-align: center;">{{ grand_total_items }}</td>
                 <td style="text-align: center;">{{ grand_total_stock|int }}</td>
-                <td>${{ '%.2f'|format(grand_total_value) }}</td>
+                <td>£{{ '%.2f'|format(grand_total_value) }}</td>
                 <td style="text-align: center;">100%</td>
             </tr>
         </tfoot>
@@ -118,7 +118,7 @@
                             const value = context.parsed;
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const percentage = ((value / total) * 100).toFixed(1);
-                            return context.label + ': $' + value.toFixed(2) + ' (' + percentage + '%)';
+                            return context.label + ': £' + value.toFixed(2) + ' (' + percentage + '%)';
                         }
                     }
                 }

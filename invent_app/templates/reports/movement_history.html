@@ -78,10 +78,10 @@
                         <span style="color: #ed8936;">-{{ transaction.quantity }}</span>
                     {% endif %}
                 </td>
-                <td>${{ '%.2f'|format(transaction.unit_price) if transaction.unit_price else 'N/A' }}</td>
+                <td>£{{ '%.2f'|format(transaction.unit_price) if transaction.unit_price else 'N/A' }}</td>
                 <td>
                     {% if transaction.unit_price %}
-                        ${{ '%.2f'|format(transaction.quantity * transaction.unit_price) }}
+                        £{{ '%.2f'|format(transaction.quantity * transaction.unit_price) }}
                     {% else %}
                         N/A
                     {% endif %}
