@@ -12,7 +12,7 @@ from invent_app import db
 load_dotenv()
 migrate = Migrate()
 
-def create_app():
+def create_app(test_config=None):
     """
     Application factory pattern
     Creates and configures the Flask application
@@ -28,6 +28,10 @@ def create_app():
     
     # Load configuration
     app.config.from_object('config.Config')
+
+    # Override with test config if provided. Testing
+    if test_config:
+        app.config.update(test_config)
     
     # Initialize extensions with app
     db.init_app(app)

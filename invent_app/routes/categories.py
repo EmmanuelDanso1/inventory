@@ -66,7 +66,7 @@ def delete(id):
         flash('Category not found', 'danger')
         return redirect(url_for('categories.list'))
     
-    if category.items:
+    if category.items.count() > 0:
         item_count = category.items.count()
         flash(
             f'Cannot delete "{category.category_name}" — it has {item_count} item(s). '
