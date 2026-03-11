@@ -2,6 +2,8 @@
 Pytest fixtures shared across all tests
 """
 
+import os
+os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
 import pytest
 from invent_app import create_app, db as _db
 from invent_app.models.normalized.category import Category
@@ -23,7 +25,6 @@ def app():
     with app.app_context():
         _db.create_all()
         yield app
-        _db.drop_all()
 
 
 @pytest.fixture(scope='function')

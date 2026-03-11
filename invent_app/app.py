@@ -23,9 +23,7 @@ def create_app(test_config=None):
     Returns:
         Configured Flask application
     """
-    app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-    
+    app = Flask(__name__)    
     # Load configuration
     app.config.from_object('config.Config')
 
@@ -45,6 +43,9 @@ def create_app(test_config=None):
     
     # Register template filters
     register_template_filters(app)
+
+    # Register request handlers
+    register_request_handlers(app)
 
 
 
@@ -73,6 +74,11 @@ def register_blueprints(app):
 
 def register_error_handlers(app):
     """Register error handlers for common HTTP errors"""
+
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        db.session.rollback()
+        raise e
     
     @app.errorhandler(404)
     def not_found(error):
@@ -168,7 +174,13 @@ def register_context_processors(app):
 
 def register_request_handlers(app):
     """Register before/after request handlers"""
-    
+
+    @app.teardown_request
+    def teardown_request(exception=None):
+        if exception:
+            db.session.rollback()
+        db.session.remove()
+        
     @app.before_request
     def before_request():
         """Execute before each request"""

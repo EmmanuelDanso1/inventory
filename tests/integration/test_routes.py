@@ -126,7 +126,7 @@ class TestCategoryRoutes:
             db.select(Category).where(Category.category_id == cat_id)
         ).scalar_one_or_none()
         assert result is None
-        
+
 # ── TRANSACTION ROUTES ────────────────────────────────────────────────────────
 
 class TestTransactionRoutes:
@@ -145,8 +145,10 @@ class TestTransactionRoutes:
 
     def test_stock_in_post(self, client, db, item, transaction_types):
         initial_stock = item.current_stock
+        item_id = item.item_id
+
         response = client.post('/transactions/stock-in', data={
-            'item_id': item.item_id,
+            'item_id': item_id,
             'quantity': '10',
             'unit_price': '900.00',
             'supplier_id': '0',
@@ -154,22 +156,26 @@ class TestTransactionRoutes:
             'notes': 'Test stock in',
         }, follow_redirects=True)
         assert response.status_code == 200
-        db.session.refresh(item)
-        assert item.current_stock == initial_stock + 10
+
+        updated_item = db.session.get(Item, item_id)
+        assert updated_item.current_stock == initial_stock + 10
 
     def test_stock_out_insufficient_stock(self, client, db, item, transaction_types):
+        item_id = item.item_id
         item.current_stock = 5
         db.session.commit()
 
         response = client.post('/transactions/stock-out', data={
-            'item_id': item.item_id,
+            'item_id': item_id,
             'quantity': '100',
             'reference_number': 'REF-002',
             'notes': 'Test stock out',
         }, follow_redirects=True)
         assert response.status_code == 200
-        db.session.refresh(item)
-        assert item.current_stock == 5  # unchanged
+
+        updated_item = db.session.get(Item, item_id)
+        assert updated_item.current_stock == 5
+
 
     def test_transaction_detail_loads(self, client, db, stock_in_transaction):
         response = client.get(f'/transactions/{stock_in_transaction.transaction_id}')
