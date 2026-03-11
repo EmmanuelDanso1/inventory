@@ -9,6 +9,7 @@
         <p style="color: #718096; margin-top: 5px;">Manage suppliers and vendors</p>
     </div>
     <div class="header-actions">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#generateModal">⚡ Generate</button>
         <a href="{{ url_for('suppliers.create') }}" class="btn btn-primary">+ Add Supplier</a>
     </div>
 </div>
@@ -68,6 +69,30 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
+
+<!-- Generate Modal -->
+<div class="modal fade" id="generateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="POST" action="/seed/suppliers">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">⚡ Generate Random Suppliers</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Automatically generate randomized suppliers with realistic names, emails, and phone numbers.</p>
+                    <label class="form-label fw-bold">How many suppliers to generate?</label>
+                    <input type="number" name="count" class="form-control" value="10" min="1" max="500" required>
+                    <small class="text-muted">Max 500 per generation. Will be added on top of existing data.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Generate</button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Delete Confirmation Modal -->

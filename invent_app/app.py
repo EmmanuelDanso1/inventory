@@ -62,6 +62,7 @@ def register_blueprints(app):
     from invent_app.routes.transactions import bp as transactions_bp
     from invent_app.routes.reports import bp as reports_bp
     from invent_app.routes.api import bp as api_bp
+    from invent_app.routes.seed import bp as seed_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(items_bp, url_prefix='/items')
@@ -70,6 +71,7 @@ def register_blueprints(app):
     app.register_blueprint(transactions_bp, url_prefix='/transactions')
     app.register_blueprint(reports_bp, url_prefix='/reports')
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(seed_bp)
 
 
 def register_error_handlers(app):

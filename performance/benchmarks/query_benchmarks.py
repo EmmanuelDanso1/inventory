@@ -153,7 +153,7 @@ def run_all_benchmarks():
         },
         {
             'name': 'Recent Transactions',
-            'description': 'Fetch last 50 transactions with item and type details',
+            'description': 'Fetch  all transactions with item and type details',
             'normalized_fn': normalized_get_transactions,
             'denormalized_fn': denormalized_get_transactions,
         },

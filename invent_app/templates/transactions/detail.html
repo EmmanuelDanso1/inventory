@@ -48,8 +48,8 @@
             </p>
             <p><strong>Item Code:</strong> {{ transaction.item.item_code }}</p>
             {% if transaction.unit_price %}
-                <p><strong>Unit Price:</strong> ${{ '%.2f'|format(transaction.unit_price) }}</p>
-                <p><strong>Total Value:</strong> ${{ '%.2f'|format(transaction.quantity * transaction.unit_price) }}</p>
+                <p><strong>Unit Price:</strong> £{{ '%.2f'|format(transaction.unit_price) }}</p>
+                <p><strong>Total Value:</strong> £{{ '%.2f'|format(transaction.quantity * transaction.unit_price) }}</p>
             {% endif %}
             {% if transaction.supplier %}
                 <p><strong>Supplier:</strong> {{ transaction.supplier.supplier_name }}</p>
