@@ -235,3 +235,51 @@ def seed_transactions():
     db.session.commit()
     flash(f'Successfully generated {count} transactions!', 'success')
     return redirect(url_for('transactions.list'))
+
+
+#Autodeletion
+
+@bp.route('/seed/categories/clear', methods=['POST'])
+def clear_categories():
+    # Only delete categories with no items
+    empty = db.session.query(Category).filter(~Category.items.any()).all()
+    count = len(empty)
+    for cat in empty:
+        db.session.delete(cat)
+    db.session.commit()
+    flash(f'Deleted {count} empty categories.', 'success')
+    return redirect(url_for('categories.list'))
+
+
+@bp.route('/seed/suppliers/clear', methods=['POST'])
+def clear_suppliers():
+    # Only delete suppliers with no items
+    empty = db.session.query(Supplier).filter(~Supplier.items.any()).all()
+    count = len(empty)
+    for sup in empty:
+        db.session.delete(sup)
+    db.session.commit()
+    flash(f'Deleted {count} unlinked suppliers.', 'success')
+    return redirect(url_for('suppliers.list'))
+
+
+@bp.route('/seed/items/clear', methods=['POST'])
+def clear_items():
+    items = db.session.query(Item).all()
+    count = len(items)
+    for item in items:
+        for t in item.transactions:
+            db.session.delete(t)
+        db.session.delete(item)
+    db.session.commit()
+    flash(f'Deleted {count} items and their transactions.', 'success')
+    return redirect(url_for('items.list'))
+
+
+@bp.route('/seed/transactions/clear', methods=['POST'])
+def clear_transactions():
+    count = db.session.query(Transaction).count()
+    db.session.query(Transaction).delete()
+    db.session.commit()
+    flash(f'Deleted {count} transactions.', 'success')
+    return redirect(url_for('transactions.list'))

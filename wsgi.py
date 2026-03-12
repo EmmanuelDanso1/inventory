@@ -4,9 +4,6 @@ from invent_app import create_app, db
 app = create_app()
 
 with app.app_context():
-    db.drop_all()
-    db.create_all()
-    
     # Seed transaction types
     from invent_app.models.normalized.transaction_type import TransactionType
     for name in ['STOCK_IN', 'STOCK_OUT', 'ADJUSTMENT']:

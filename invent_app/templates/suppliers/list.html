@@ -10,6 +10,7 @@
     </div>
     <div class="header-actions">
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#generateModal">Generate</button>
+        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#clearModal">🗑 Clear Data</button>
         <a href="{{ url_for('suppliers.create') }}" class="btn btn-primary">+ Add Supplier</a>
     </div>
 </div>
@@ -89,6 +90,28 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success">Generate</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Clear Data Modal -->
+<div class="modal fade" id="clearModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="POST" action="/seed/suppliers/clear">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">🗑 Clear Supplier Data</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>This will delete all <strong>unlinked suppliers</strong> (those with no items assigned).</p>
+                    <p class="text-muted mb-0" style="font-size: 14px;">Suppliers that have items cannot be deleted until those items are removed first.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Yes, Clear</button>
                 </div>
             </div>
         </form>
