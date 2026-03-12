@@ -4,12 +4,19 @@ from invent_app import create_app, db
 app = create_app()
 
 with app.app_context():
-    # Seed transaction types
+    db.create_all()
+
     from invent_app.models.normalized.transaction_type import TransactionType
-    for name in ['STOCK_IN', 'STOCK_OUT', 'ADJUSTMENT']:
-        db.session.add(TransactionType(type_name=name))
+
+    types = ['STOCK_IN', 'STOCK_OUT', 'ADJUSTMENT']
+
+    for name in types:
+        existing = TransactionType.query.filter_by(type_name=name).first()
+        if not existing:
+            db.session.add(TransactionType(type_name=name))
+
     db.session.commit()
-    print("Database initialized")
+    print("Database initialized safely")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
