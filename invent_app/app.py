@@ -216,7 +216,7 @@ def register_cli_commands(app):
         
         # Create all tables
         db.create_all()
-        print("✓ Database tables created")
+        print("Database tables created")
         
         # Seed transaction types
         transaction_types = [
@@ -232,7 +232,7 @@ def register_cli_commands(app):
                 db.session.add(tt)
         
         db.session.commit()
-        print("✓ Transaction types seeded")
+        print("Transaction types seeded")
         print("Database initialization complete!")
     
     @app.cli.command()
@@ -253,7 +253,7 @@ def register_cli_commands(app):
         for cat in categories:
             db.session.add(cat)
         db.session.commit()
-        print("✓ Categories added")
+        print("Categories added")
         
         # Sample Suppliers
         suppliers = [
@@ -274,7 +274,7 @@ def register_cli_commands(app):
         for sup in suppliers:
             db.session.add(sup)
         db.session.commit()
-        print("✓ Suppliers added")
+        print("Suppliers added")
         
         # Sample Locations
         locations = [
@@ -285,7 +285,7 @@ def register_cli_commands(app):
         for loc in locations:
             db.session.add(loc)
         db.session.commit()
-        print("✓ Locations added")
+        print("Locations added")
         
         # Sample Items
         items = [
@@ -316,7 +316,7 @@ def register_cli_commands(app):
         for item in items:
             db.session.add(item)
         db.session.commit()
-        print("✓ Items added")
+        print("Items added")
         
         print("Sample data seeding complete!")
     
@@ -326,7 +326,7 @@ def register_cli_commands(app):
         if input("Are you sure? This will delete all data (yes/no): ").lower() == 'yes':
             db.drop_all()
             db.create_all()
-            print("✓ Database reset complete")
+            print("Database reset complete")
         else:
             print("Operation cancelled")
 
@@ -339,5 +339,3 @@ def import_models():
         category, supplier, location, item, 
         transaction, transaction_type
     )
-    # Import denormalized models if needed
-    # from app.models.denormalized import item_denorm, transaction_denorm
