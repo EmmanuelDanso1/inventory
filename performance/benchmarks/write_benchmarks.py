@@ -1,19 +1,24 @@
 """
 Write Benchmarks - Compare insert/update performance between schemas.
 
-Fixes applied vs original:
-  - All write operations now run ITERATIONS times (was single-shot before).
-  - Standard deviation calculated for every write benchmark.
-  - Bulk insert benchmark added: tests inserting N rows in one commit,
-    which is more representative than single-row insert/delete cycles.
-  - Index suppression applied for non-indexed write comparison.
-  - Cleanup is handled within each iteration so tests stay self-contained.
+Design note on indexing:
+  Index maintenance during INSERT and UPDATE happens at the storage engine level,
+  regardless of session-level planner settings. SET enable_indexscan = off only
+  affects the query planner for SELECT operations. Write benchmarks therefore
+  run under normal indexed conditions only. This reflects production-realistic
+  behaviour and is documented as a methodological decision, not a limitation.
+
+Changes vs original:
+  - All operations run ITERATIONS times (was single-shot).
+  - Standard deviation calculated for every benchmark.
+  - Bulk insert benchmark added (50 rows per commit).
+  - Bulk transaction insert benchmark added.
+  - No misleading no-index write variants.
 """
 
 import time
 import math
 import uuid
-from sqlalchemy import text
 from invent_app import db
 from invent_app.models.normalized.item import Item
 from invent_app.models.normalized.transaction import Transaction
@@ -23,8 +28,8 @@ from invent_app.models.denormalized.item_denorm import ItemDenorm
 from invent_app.models.denormalized.transaction_denorm import TransactionDenorm
 
 
-ITERATIONS = 10
-BULK_INSERT_SIZE = 50   # rows per bulk-insert test
+ITERATIONS    = 10
+BULK_ROW_SIZE = 50
 
 
 # ---------------------------------------------------------------------------
@@ -39,19 +44,8 @@ def _stddev(times):
     return round(math.sqrt(sum((t - mean) ** 2 for t in times) / (n - 1)), 3)
 
 
-def _set_index_usage(enabled: bool):
-    flag = "on" if enabled else "off"
-    try:
-        db.session.execute(text(f"SET enable_indexscan = {flag}"))
-        db.session.execute(text(f"SET enable_bitmapscan = {flag}"))
-        db.session.execute(text(f"SET enable_index_only_scan = {flag}"))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-
-def _run_write_iterations(fn, iterations=ITERATIONS):
-    """Time a write function across multiple iterations. Returns stats dict."""
+def _run_iterations(fn, iterations=ITERATIONS):
+    """Time a write function across multiple iterations and return stats dict."""
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
@@ -67,18 +61,15 @@ def _run_write_iterations(fn, iterations=ITERATIONS):
 
 
 # ---------------------------------------------------------------------------
-# Benchmark 1: Single-item insert (round-trip: insert + delete)
+# Benchmark 1: Single-item insert + delete
 # ---------------------------------------------------------------------------
 
-def _insert_item_normalized(category_id):
+def _insert_norm(category_id):
     code = f'NORM-{uuid.uuid4().hex[:8].upper()}'
     item = Item(
-        item_code=code,
-        item_name=f'Benchmark Item {code}',
-        category_id=category_id,
-        unit_price=9.99,
-        current_stock=100,
-        reorder_level=10
+        item_code=code, item_name=f'Benchmark {code}',
+        category_id=category_id, unit_price=9.99,
+        current_stock=100, reorder_level=10
     )
     db.session.add(item)
     db.session.commit()
@@ -86,16 +77,12 @@ def _insert_item_normalized(category_id):
     db.session.commit()
 
 
-def _insert_item_denormalized():
+def _insert_denorm():
     code = f'DENORM-{uuid.uuid4().hex[:8].upper()}'
     item = ItemDenorm(
-        item_code=code,
-        item_name=f'Benchmark Item {code}',
-        category_name='Electronics',
-        supplier_name='Benchmark Supplier',
-        unit_price=9.99,
-        current_stock=100,
-        reorder_level=10
+        item_code=code, item_name=f'Benchmark {code}',
+        category_name='Electronics', supplier_name='Benchmark Supplier',
+        unit_price=9.99, current_stock=100, reorder_level=10
     )
     db.session.add(item)
     db.session.commit()
@@ -104,41 +91,35 @@ def _insert_item_denormalized():
 
 
 # ---------------------------------------------------------------------------
-# Benchmark 2: Bulk insert (BULK_INSERT_SIZE rows in one transaction)
+# Benchmark 2: Bulk insert BULK_ROW_SIZE items in one commit
 # ---------------------------------------------------------------------------
 
-def _bulk_insert_normalized(category_id):
-    items = []
-    for _ in range(BULK_INSERT_SIZE):
-        code = f'BULK-N-{uuid.uuid4().hex[:8].upper()}'
-        items.append(Item(
-            item_code=code,
-            item_name=f'Bulk Item {code}',
+def _bulk_insert_norm(category_id):
+    items = [
+        Item(
+            item_code=f'BULK-N-{uuid.uuid4().hex[:8].upper()}',
+            item_name='Bulk Benchmark Item',
             category_id=category_id,
-            unit_price=4.99,
-            current_stock=50,
-            reorder_level=5
-        ))
+            unit_price=4.99, current_stock=50, reorder_level=5
+        )
+        for _ in range(BULK_ROW_SIZE)
+    ]
     db.session.bulk_save_objects(items)
     db.session.commit()
-    # Cleanup: remove what we just inserted
     db.session.query(Item).filter(Item.item_code.like('BULK-N-%')).delete(synchronize_session=False)
     db.session.commit()
 
 
-def _bulk_insert_denormalized():
-    items = []
-    for _ in range(BULK_INSERT_SIZE):
-        code = f'BULK-D-{uuid.uuid4().hex[:8].upper()}'
-        items.append(ItemDenorm(
-            item_code=code,
-            item_name=f'Bulk Item {code}',
-            category_name='Electronics',
-            supplier_name='Bulk Supplier',
-            unit_price=4.99,
-            current_stock=50,
-            reorder_level=5
-        ))
+def _bulk_insert_denorm():
+    items = [
+        ItemDenorm(
+            item_code=f'BULK-D-{uuid.uuid4().hex[:8].upper()}',
+            item_name='Bulk Benchmark Item',
+            category_name='Electronics', supplier_name='Bulk Supplier',
+            unit_price=4.99, current_stock=50, reorder_level=5
+        )
+        for _ in range(BULK_ROW_SIZE)
+    ]
     db.session.bulk_save_objects(items)
     db.session.commit()
     db.session.query(ItemDenorm).filter(ItemDenorm.item_code.like('BULK-D-%')).delete(synchronize_session=False)
@@ -147,11 +128,11 @@ def _bulk_insert_denormalized():
 
 # ---------------------------------------------------------------------------
 # Benchmark 3: Category rename propagation
-# Normalized: update 1 row in categories → all items reflect it via FK
-# Denormalized: must rewrite every matching row in items_denormalized
+# Normalized: 1 row updated → all items reflect change via FK
+# Denormalized: every matching item row must be rewritten
 # ---------------------------------------------------------------------------
 
-def _update_category_normalized(category_id):
+def _rename_category_norm(category_id):
     cat = db.session.get(Category, category_id)
     original = cat.category_name
     cat.category_name = '__BenchmarkRename__'
@@ -160,7 +141,7 @@ def _update_category_normalized(category_id):
     db.session.commit()
 
 
-def _update_category_denormalized(category_name):
+def _rename_category_denorm(category_name):
     rows = db.session.query(ItemDenorm).filter_by(category_name=category_name).all()
     for row in rows:
         row.category_name = '__BenchmarkRename__'
@@ -172,18 +153,14 @@ def _update_category_denormalized(category_name):
 
 # ---------------------------------------------------------------------------
 # Benchmark 4: Bulk transaction insert
-# Simulates automated discovery tool syncing many stock events at once
 # ---------------------------------------------------------------------------
 
-def _bulk_insert_transactions_normalized(category_id):
-    item_code = f'TX-N-{uuid.uuid4().hex[:6].upper()}'
+def _bulk_tx_norm(category_id):
+    sentinel = f'TX-N-{uuid.uuid4().hex[:6].upper()}'
     item = Item(
-        item_code=item_code,
-        item_name='Transaction Benchmark Item',
-        category_id=category_id,
-        unit_price=1.00,
-        current_stock=9999,
-        reorder_level=1
+        item_code=sentinel, item_name='TX Benchmark Item',
+        category_id=category_id, unit_price=1.00,
+        current_stock=9999, reorder_level=1
     )
     db.session.add(item)
     db.session.flush()
@@ -191,137 +168,111 @@ def _bulk_insert_transactions_normalized(category_id):
     tx_type = db.session.query(TransactionType).filter_by(type_name='STOCK_IN').first()
     txs = [
         Transaction(
-            item_id=item.item_id,
-            type_id=tx_type.type_id,
-            quantity=1,
-            unit_price=1.00,
+            item_id=item.item_id, type_id=tx_type.type_id,
+            quantity=1, unit_price=1.00,
             reference_number=f'REF-{uuid.uuid4().hex[:6].upper()}'
         )
-        for _ in range(BULK_INSERT_SIZE)
+        for _ in range(BULK_ROW_SIZE)
     ]
     db.session.bulk_save_objects(txs)
     db.session.commit()
-
-    # Cleanup
     db.session.query(Transaction).filter_by(item_id=item.item_id).delete(synchronize_session=False)
     db.session.delete(item)
     db.session.commit()
 
 
-def _bulk_insert_transactions_denormalized():
+def _bulk_tx_denorm():
     txs = [
         TransactionDenorm(
             item_code=f'TX-D-{uuid.uuid4().hex[:6].upper()}',
-            item_name='Transaction Benchmark Item',
-            category_name='Electronics',
-            supplier_name='Benchmark Supplier',
-            transaction_type='STOCK_IN',
-            quantity=1,
-            unit_price=1.00,
+            item_name='TX Benchmark Item',
+            category_name='Electronics', supplier_name='Benchmark Supplier',
+            transaction_type='STOCK_IN', quantity=1, unit_price=1.00,
             reference_number=f'REF-{uuid.uuid4().hex[:6].upper()}'
         )
-        for _ in range(BULK_INSERT_SIZE)
+        for _ in range(BULK_ROW_SIZE)
     ]
     db.session.bulk_save_objects(txs)
     db.session.commit()
     db.session.query(TransactionDenorm).filter(
-        TransactionDenorm.item_name == 'Transaction Benchmark Item'
+        TransactionDenorm.item_name == 'TX Benchmark Item'
     ).delete(synchronize_session=False)
     db.session.commit()
 
 
 # ---------------------------------------------------------------------------
-# Main entry point
+# Entry point
 # ---------------------------------------------------------------------------
 
 def run_write_benchmarks(iterations=ITERATIONS):
     """
-    Run all write benchmarks under both indexed and non-indexed conditions.
+    Run all write benchmarks under normal (indexed) conditions.
     Returns a list of result dicts for the performance.html template.
     """
-    # Resolve required FK references once
+    # Resolve FK anchors
     category = db.session.query(Category).first()
-    category_id   = category.category_id   if category else None
-    category_name = category.category_name if category else 'Electronics'
-
-    # Fallback category for FK tests
-    if not category_id:
-        fallback = Category(category_name='__Benchmark__', description='Auto-created for benchmarks')
+    if not category:
+        fallback = Category(category_name='__Benchmark__', description='Auto-created')
         db.session.add(fallback)
         db.session.commit()
-        category_id   = fallback.category_id
-        category_name = fallback.category_name
+        category = fallback
 
-    results = []
+    category_id   = category.category_id
+    category_name = category.category_name
 
-    benchmarks = [
+    benchmark_defs = [
         {
-            'name': 'Single Item Insert',
+            'name':        'Single Item Insert',
             'description': f'Insert one item then delete it ({iterations} iterations)',
-            'note': 'Normalized requires valid FK lookup; denormalized stores name directly.',
-            'norm_fn':   lambda: _insert_item_normalized(category_id),
-            'denorm_fn': _insert_item_denormalized,
+            'note':        'Normalized requires valid FK; denormalized stores name directly.',
+            'norm_fn':     lambda: _insert_norm(category_id),
+            'denorm_fn':   _insert_denorm,
         },
         {
-            'name': f'Bulk Insert ({BULK_INSERT_SIZE} items)',
-            'description': f'Insert {BULK_INSERT_SIZE} items in a single transaction ({iterations} iterations)',
-            'note': 'Tests batch write throughput. Normalized has index maintenance on multiple columns.',
-            'norm_fn':   lambda: _bulk_insert_normalized(category_id),
-            'denorm_fn': _bulk_insert_denormalized,
+            'name':        f'Bulk Insert ({BULK_ROW_SIZE} items)',
+            'description': f'Insert {BULK_ROW_SIZE} items in one transaction ({iterations} iterations)',
+            'note':        'Tests batch write throughput. Both schemas maintain indexes during insert.',
+            'norm_fn':     lambda: _bulk_insert_norm(category_id),
+            'denorm_fn':   _bulk_insert_denorm,
         },
         {
-            'name': 'Category Rename Propagation',
-            'description': 'Rename a category and measure the propagation cost',
-            'note': 'Normalized updates 1 row; denormalized must rewrite every matching item row.',
-            'norm_fn':   lambda: _update_category_normalized(category_id),
-            'denorm_fn': lambda: _update_category_denormalized(category_name),
+            'name':        'Category Rename Propagation',
+            'description': f'Rename a category and measure propagation cost ({iterations} iterations)',
+            'note':        'Normalized updates 1 row; denormalized rewrites every matching item row.',
+            'norm_fn':     lambda: _rename_category_norm(category_id),
+            'denorm_fn':   lambda: _rename_category_denorm(category_name),
         },
         {
-            'name': f'Bulk Transaction Insert ({BULK_INSERT_SIZE} rows)',
-            'description': f'Insert {BULK_INSERT_SIZE} transaction records in one commit',
-            'note': 'Simulates automated discovery tool syncing. Normalized uses FK joins; denormalized is self-contained.',
-            'norm_fn':   lambda: _bulk_insert_transactions_normalized(category_id),
-            'denorm_fn': _bulk_insert_transactions_denormalized,
+            'name':        f'Bulk Transaction Insert ({BULK_ROW_SIZE} rows)',
+            'description': f'Insert {BULK_ROW_SIZE} transaction records in one commit ({iterations} iterations)',
+            'note':        'Simulates automated stock sync. Normalized uses FK; denormalized is self-contained.',
+            'norm_fn':     lambda: _bulk_tx_norm(category_id),
+            'denorm_fn':   _bulk_tx_denorm,
         },
     ]
 
-    for b in benchmarks:
-        row = {
-            'name':        b['name'],
-            'description': b['description'],
-            'note':        b['note'],
-        }
+    results = []
+    for b in benchmark_defs:
+        row = {'name': b['name'], 'description': b['description'], 'note': b['note']}
 
-        # Indexed
         for key, fn in [('normalized', b['norm_fn']), ('denormalized', b['denorm_fn'])]:
             try:
-                _set_index_usage(True)
-                row[key] = _run_write_iterations(fn, iterations)
+                row[key] = _run_iterations(fn, iterations)
             except Exception as e:
                 db.session.rollback()
-                row[key] = {'avg_ms': 0, 'min_ms': 0, 'max_ms': 0, 'stddev_ms': 0, 'error': str(e)}
+                row[key] = {
+                    'avg_ms': 0, 'min_ms': 0, 'max_ms': 0,
+                    'stddev_ms': 0, 'iterations': 0, 'error': str(e)
+                }
 
-        # Non-indexed
-        for key, fn in [('normalized', b['norm_fn']), ('denormalized', b['denorm_fn'])]:
-            ni_key = f'{key}_no_index'
-            try:
-                _set_index_usage(False)
-                row[ni_key] = _run_write_iterations(fn, iterations)
-            except Exception as e:
-                db.session.rollback()
-                row[ni_key] = {'avg_ms': 0, 'min_ms': 0, 'max_ms': 0, 'stddev_ms': 0, 'error': str(e)}
-
-        _set_index_usage(True)  # restore
-
-        # Winner
-        n_avg = row['normalized']['avg_ms']
-        d_avg = row['denormalized']['avg_ms']
-        if n_avg > 0 and d_avg > 0:
-            faster = 'normalized' if n_avg < d_avg else 'denormalized'
-            slower_val = max(n_avg, d_avg)
+        n = row['normalized']['avg_ms']
+        d = row['denormalized']['avg_ms']
+        if n > 0 and d > 0:
+            faster      = 'normalized' if n < d else 'denormalized'
+            slower_val  = max(n, d)
             row['winner']   = faster
-            row['diff_ms']  = round(abs(n_avg - d_avg), 3)
-            row['diff_pct'] = round(abs(n_avg - d_avg) / slower_val * 100, 1)
+            row['diff_ms']  = round(abs(n - d), 3)
+            row['diff_pct'] = round(abs(n - d) / slower_val * 100, 1)
         else:
             row['winner']   = 'error'
             row['diff_ms']  = 0
