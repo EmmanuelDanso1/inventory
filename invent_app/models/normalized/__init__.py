@@ -4,6 +4,7 @@ from invent_app.models.normalized.location import Location
 from invent_app.models.normalized.item import Item
 from invent_app.models.normalized.transaction_type import TransactionType
 from invent_app.models.normalized.transaction import Transaction
+from invent_app.models.normalized.benchmark_run import BenchmarkRun
 
 __all__ = [
     'Category',
@@ -11,5 +12,6 @@ __all__ = [
     'Location',
     'Item',
     'TransactionType',
-    'Transaction'
+    'Transaction',
+    'BenchmarkRun'
 ]

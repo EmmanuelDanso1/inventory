@@ -3,6 +3,7 @@ from invent_app import db
 from invent_app.models.normalized import Transaction, TransactionType
 from invent_app.models.normalized.item import Item
 from invent_app.models.normalized.category import Category
+from invent_app.models.normalized.benchmark_run import BenchmarkRun
 from sqlalchemy import func
 
 bp = Blueprint('reports', __name__)
@@ -318,12 +319,15 @@ def monthly_summary():
 # REPORT 8: PERFORMANCE COMPARISON (For Research)
 @bp.route('/performance', methods=['GET', 'POST'])
 def performance():
+    import json
     from invent_app.models.denormalized.item_denorm import ItemDenorm
     from invent_app.models.denormalized.transaction_denorm import TransactionDenorm
+    from invent_app.models.normalized.benchmark_run import BenchmarkRun
 
     query_results = []
     write_results = []
     error = None
+    selected_run = None
 
     if request.method == 'POST':
         try:
@@ -331,6 +335,23 @@ def performance():
             from performance.benchmarks.write_benchmarks import run_write_benchmarks
             query_results = run_all_benchmarks()
             write_results = run_write_benchmarks()
+
+            # Save benchmark run to history
+            norm_wins   = sum(1 for r in query_results if r['winner'] == 'normalized')
+            denorm_wins = sum(1 for r in query_results if r['winner'] == 'denormalized')
+
+            selected_run = BenchmarkRun(
+                norm_items=db.session.query(Item).count(),
+                norm_transactions=db.session.query(Transaction).count(),
+                denorm_items=db.session.query(ItemDenorm).count(),
+                denorm_transactions=db.session.query(TransactionDenorm).count(),
+                results_json=json.dumps(query_results),
+                write_results_json=json.dumps(write_results),
+                winner_summary=f'Normalized {norm_wins} vs Denormalized {denorm_wins}'
+            )
+            db.session.add(selected_run)
+            db.session.commit()
+
         except Exception as e:
             db.session.rollback()
             error = str(e)
@@ -353,16 +374,56 @@ def performance():
         denorm_items        = 0
         denorm_transactions = 0
 
+    # Fetch last 5 benchmark runs for history panel
+    try:
+        history = BenchmarkRun.query.order_by(
+            BenchmarkRun.run_at.desc()
+        ).limit(5).all()
+    except Exception:
+        history = []
+
     return render_template(
         'reports/performance.html',
         results=query_results,
         write_results=write_results,
         error=error,
+        selected_run=selected_run,
+        history=history,
         norm_items=norm_items,
         norm_transactions=norm_transactions,
         denorm_items=denorm_items,
         denorm_transactions=denorm_transactions,
     )
+
+# performance history
+@bp.route('/performance/history/<int:run_id>')
+def performance_history(run_id):
+    import json
+    from invent_app.models.normalized.benchmark_run import BenchmarkRun
+    from invent_app.models.denormalized.item_denorm import ItemDenorm
+    from invent_app.models.denormalized.transaction_denorm import TransactionDenorm
+
+    selected_run = BenchmarkRun.query.get_or_404(run_id)
+    query_results = json.loads(selected_run.results_json)
+    write_results = json.loads(selected_run.write_results_json) if selected_run.write_results_json else []
+
+    history = BenchmarkRun.query.order_by(
+        BenchmarkRun.run_at.desc()
+    ).limit(5).all()
+
+    return render_template(
+        'reports/performance.html',
+        results=query_results,
+        write_results=write_results,
+        error=None,
+        selected_run=selected_run,
+        history=history,
+        norm_items=selected_run.norm_items,
+        norm_transactions=selected_run.norm_transactions,
+        denorm_items=selected_run.denorm_items,
+        denorm_transactions=selected_run.denorm_transactions,
+    )
+
 
 # API ENDPOINT: Export Report Data
 @bp.route('/export/<report_type>')
