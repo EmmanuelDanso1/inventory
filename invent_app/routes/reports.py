@@ -424,6 +424,15 @@ def performance_history(run_id):
         denorm_transactions=selected_run.denorm_transactions,
     )
 
+# delete
+@bp.route('/performance/history/<int:run_id>/delete', methods=['POST'])
+def delete_benchmark_run(run_id):
+    from invent_app.models.normalized.benchmark_run import BenchmarkRun
+    run = BenchmarkRun.query.get_or_404(run_id)
+    db.session.delete(run)
+    db.session.commit()
+    flash(f'Benchmark run #{run_id} deleted successfully.', 'success')
+    return redirect(url_for('reports.performance'))
 
 # API ENDPOINT: Export Report Data
 @bp.route('/export/<report_type>')
