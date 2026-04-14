@@ -431,7 +431,7 @@ def delete_benchmark_run(run_id):
     run = BenchmarkRun.query.get_or_404(run_id)
     db.session.delete(run)
     db.session.commit()
-    flash(f'Benchmark run #{run_id} deleted successfully.', 'success')
+    flash(f'Benchmark run deleted successfully.', 'success')
     return redirect(url_for('reports.performance'))
 
 # API ENDPOINT: Export Report Data

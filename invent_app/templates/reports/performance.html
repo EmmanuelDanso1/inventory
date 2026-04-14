@@ -96,7 +96,7 @@
     <table>
         <thead>
             <tr>
-                <th>Run #</th>
+                
                 <th>Date &amp; Time</th>
                 <th>Dataset</th>
                 <th>Winner Summary</th>
@@ -106,7 +106,6 @@
         <tbody>
             {% for run in history %}
             <tr style="{% if selected_run and selected_run.id == run.id %}background:#ebf8ff; border-left: 3px solid #4299e1;{% endif %}">
-                <td><strong>#{{ run.id }}</strong></td>
                 <td>
                     <strong>{{ run.run_at.strftime('%Y-%m-%d') }}</strong>
                     <div style="font-size:11px; color:#a0aec0;">{{ run.run_at.strftime('%H:%M:%S') }} UTC</div>
@@ -154,7 +153,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Are you sure you want to delete benchmark run <strong id="deleteRunId"></strong>?</p>
+                    <p>Are you sure you want to delete benchmark run?</p>
                     <div style="background:#f7fafc; border-radius:6px; padding:12px; margin-top:10px; font-size:13px; color:#718096;">
                         <div><strong>Date:</strong> <span id="deleteRunDate"></span></div>
                         <div style="margin-top:4px;"><strong>Result:</strong> <span id="deleteRunSummary"></span></div>
@@ -409,7 +408,6 @@
             const runId = button.getAttribute('data-run-id');
             const runDate = button.getAttribute('data-run-date');
             const runSummary = button.getAttribute('data-run-summary');
-            document.getElementById('deleteRunId').textContent = '#' + runId;
             document.getElementById('deleteRunDate').textContent = runDate + ' UTC';
             document.getElementById('deleteRunSummary').textContent = runSummary;
             document.getElementById('deleteBenchmarkForm').action = '/reports/performance/history/' + runId + '/delete';
